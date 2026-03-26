@@ -324,7 +324,7 @@
         />
       </div>
       <div class="input-group">
-        <label>PEN Number</label>
+        <label>PEN</label>
         <input
           type="text"
           id="penInput"
@@ -427,7 +427,7 @@
             <div class="signature-area">
               <div class="sign-space"></div>
               <p class="designation" id="outOfficer">DDO Name</p>
-              <p class="pen-number">PEN <span id="outPen">DDO PEN</span></p>
+              <p class="pen-number">PEN <span id="outPen">of DDO</span></p>
               <p class="designation" id="outDesig">DDO designation</p>
               <p class="designation" id="outOfficeSign">
                 Office Name
@@ -797,7 +797,7 @@
         textY += 5;
 
         // വലിയ ഓഫീസ് പേര് വന്നാൽ അതിനെ രണ്ടോ മൂന്നോ വരികളാക്കി നടുക്ക് അലൈൻ ചെയ്യുന്നു
-        const splitSignOffice = doc.splitTextToSize(officeName, 60);
+        const splitSignOffice = doc.splitTextToSize(officeName, 50);
         splitSignOffice.forEach((line) => {
           doc.text(line, rightCenter, textY, { align: "center" });
           textY += 5;
