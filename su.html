@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - e-Cert</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f7f6; padding: 20px; max-width: 800px; margin: auto; }
+        h2 { color: #1565c0; border-bottom: 2px solid #1565c0; padding-bottom: 10px; }
+        .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-left: 5px solid #ffb300; }
+        label { font-size: 13px; font-weight: bold; color: #555; }
+        textarea, input { width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
+        button { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; }
+        .btn-approve { background-color: #2e7d32; color: white; margin-right: 10px; }
+        .btn-approve:hover { background-color: #1b5e20; }
+        .btn-delete { background-color: #d32f2f; color: white; }
+        .btn-delete:hover { background-color: #b71c1c; }
+        .empty-msg { text-align: center; color: #888; margin-top: 50px; font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <h2>🛡️ Admin Panel - Pending Approvals</h2>
+    <p>മറ്റുള്ളവർ സബ്മിറ്റ് ചെയ്ത പുതിയ സർട്ടിഫിക്കറ്റുകൾ ഇവിടെ കാണാം. ആവശ്യമെങ്കിൽ തിരുത്തലുകൾ വരുത്തിയ ശേഷം അപ്രൂവ് ചെയ്യുക.</p>
+
+    <div id="pendingList">
+        <div class="empty-msg">Loading pending certificates...</div>
+    </div>
+
+    <script>
+        // 1. Firebase Initialization
+        const firebaseConfig = {
+            apiKey: "AIzaSyAckm66_JQYhNjzIdWTi24OAm8oGNq9niM",
+            authDomain: "e-cert-database.firebaseapp.com",
+            projectId: "e-cert-database",
+            storageBucket: "e-cert-database.firebasestorage.app",
+            messagingSenderId: "815130577533",
+            appId: "1:815130577533:web:924e300fa217e78fc07f14"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // 2. Pending ഡാറ്റ വലിച്ചെടുക്കാൻ
+        function loadPendingCertificates() {
+            db.ref('pending_certificates').on('value', snapshot => {
+                const data = snapshot.val();
+                const list = document.getElementById('pendingList');
+                list.innerHTML = '';
+                
+                if (!data) {
+                    list.innerHTML = '<div class="empty-msg">✅ നിലവിൽ അപ്രൂവ് ചെയ്യാൻ പുതിയ സർട്ടിഫിക്കറ്റുകൾ ഒന്നുമില്ല!</div>';
+                    return;
+                }
+
+                // ഡാറ്റ ഉണ്ടെങ്കിൽ ഓരോന്നായി സ്ക്രീനിൽ കാണിക്കുക
+                Object.keys(data).forEach(key => {
+                    const cert = data[key];
+                    list.innerHTML += `
+                        <div class="card" id="card_${key}">
+                            <label>Certificate Text:</label>
+                            <textarea id="text_${key}" rows="4">${cert.text}</textarea>
+                            
+                            <label>Category:</label>
+                            <input type="text" id="cat_${key}" value="${cert.category}">
+                            
+                            <div>
+                                <button class="btn-approve" onclick="approveCert('${key}')">✅ Approve & Publish</button>
+                                <button class="btn-delete" onclick="deleteCert('${key}')">🗑️ Reject (Delete)</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        // 3. അപ്രൂവ് ചെയ്യാനുള്ള ഫംഗ്ഷൻ (ഇത് നേരെ മെയിൻ ലിസ്റ്റിലേക്ക് പോകും)
+        function approveCert(key) {
+            // അഡ്മിൻ എഡിറ്റ് ചെയ്ത പുതിയ വാചകവും കാറ്റഗറിയും എടുക്കുന്നു
+            const updatedText = document.getElementById('text_' + key).value.trim();
+            const updatedCategory = document.getElementById('cat_' + key).value.trim();
+            
+            if(!updatedText || !updatedCategory) {
+                alert("Text and Category cannot be empty!");
+                return;
+            }
+
+            // 'approved_certificates' ലേക്ക് സേവ് ചെയ്യുന്നു
+            db.ref('approved_certificates').push({
+                text: updatedText,
+                category: updatedCategory
+            }).then(() => {
+                // സേവ് ചെയ്ത ശേഷം pending ലിസ്റ്റിൽ നിന്ന് ഡിലീറ്റ് ചെയ്യുന്നു
+                db.ref('pending_certificates/' + key).remove();
+                alert("Certificate Approved and Published Successfully!");
+            }).catch(err => {
+                alert("Error: " + err.message);
+            });
+        }
+
+        // 4. റിജക്ട് / ഡിലീറ്റ് ചെയ്യാനുള്ള ഫംഗ്ഷൻ
+        function deleteCert(key) {
+            if(confirm("ഈ സർട്ടിഫിക്കറ്റ് ഒഴിവാക്കണോ? (Are you sure you want to delete this?)")) {
+                db.ref('pending_certificates/' + key).remove();
+            }
+        }
+
+        // പേജ് ലോഡ് ആകുമ്പോൾ ഡാറ്റ എടുക്കുന്നു
+        window.onload = loadPendingCertificates;
+    </script>
+</body>
+</html>
