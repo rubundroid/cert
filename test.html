@@ -1,6 +1,8 @@
 <!doctype html>
 <html lang="ml">
   <head>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <link rel="manifest" href="manifest.json" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -396,18 +398,112 @@
           Select Certificates
         </h3>
 
+        <div
+          style="
+            margin-bottom: 15px;
+            background: #e3f2fd;
+            padding: 10px;
+            border-radius: 6px;
+          "
+        >
+          <label
+            for="categoryFilter"
+            style="font-size: 13px; font-weight: bold; color: #1565c0"
+            >Filter by Category:</label
+          >
+          <select
+            id="categoryFilter"
+            onchange="filterCertificates()"
+            style="
+              width: 100%;
+              padding: 8px;
+              margin-top: 5px;
+              border: 1px solid #90caf9;
+              border-radius: 4px;
+              outline: none;
+            "
+          >
+            <option value="All">All Certificates</option>
+            <option value="Salary">Salary</option>
+            <option value="DA Arrear">DA Arrear</option>
+            <option value="PF NRA">PF NRA</option>
+            <option value="Tour TA">Tour TA</option>
+            <option value="Medical">Medical Reimbursement</option>
+          </select>
+        </div>
+
         <div id="checkboxContainer"></div>
 
         <div class="add-new-box">
           <label>Add New Certificate Master</label>
           <textarea
             id="newCertText"
-            placeholder="പുതിയ സർട്ടിഫിക്കറ്റ് ഇവിടെ ടൈപ്പ് ചെയ്യുക..."
+            placeholder="പുതിയ സർട്ടിഫിക്കറ്റ് ഇവിടെ ഇംഗ്ലീഷില്‍ ടൈപ്പ് ചെയ്യുക..."
           ></textarea>
           <button class="btn btn-add" onclick="addCertificate()">
             + Add to List
           </button>
         </div>
+        <div
+          style="
+            margin-top: 25px;
+            padding: 15px;
+            background: #fff8e1;
+            border: 1px solid #ffe082;
+            border-radius: 6px;
+          "
+        >
+          <h5 style="margin-top: 0; margin-bottom: 10px; color: #f57f17">
+            🌟 Contribute to Master List
+          </h5>
+          <p style="font-size: 11px; color: #666; margin-bottom: 10px">
+            താങ്കളുടെ സർട്ടിഫിക്കറ്റുകൾ അഡ്മിൻ അപ്രൂവലിന് ശേഷം എല്ലാവർക്കും
+            ലഭ്യമാകും.
+          </p>
+
+          <textarea
+            id="newCommunityCert"
+            rows="3"
+            placeholder="Type certificate text here..."
+            style="
+              width: 100%;
+              margin-bottom: 8px;
+              padding: 8px;
+              border: 1px solid #ccc;
+              border-radius: 4px;
+            "
+          ></textarea>
+
+          <input
+            type="text"
+            id="newCommunityCategory"
+            placeholder="Category (e.g., Salary, PF NRA, Tour TA)"
+            style="
+              width: 100%;
+              margin-bottom: 10px;
+              padding: 8px;
+              border: 1px solid #ccc;
+              border-radius: 4px;
+            "
+          />
+
+          <button
+            onclick="submitForApproval()"
+            style="
+              width: 100%;
+              background: #fbc02d;
+              color: #000;
+              border: none;
+              padding: 10px;
+              font-weight: bold;
+              border-radius: 4px;
+              cursor: pointer;
+            "
+          >
+            Submit for Approval
+          </button>
+        </div>
+
         <div class="image-upload-box">
           <h4>Add Images for Manual Signing (Optional)</h4>
 
@@ -583,6 +679,72 @@
       >
     </div>
     <script>
+      // --- 1. Firebase Initialization ---
+      const firebaseConfig = {
+        apiKey: "AIzaSyAckm66_JQYhNjzIdWTi24OAm8oGNq9niM",
+        authDomain: "e-cert-database.firebaseapp.com",
+        projectId: "e-cert-database",
+        storageBucket: "e-cert-database.firebasestorage.app",
+        messagingSenderId: "815130577533",
+        appId: "1:815130577533:web:924e300fa217e78fc07f14",
+      };
+
+      // ഫയർബേസ് സ്റ്റാർട്ട് ചെയ്യുന്നു
+      if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+      }
+      const db = firebase.database();
+
+      // കമ്മ്യൂണിറ്റി സർട്ടിഫിക്കറ്റുകൾ സേവ് ചെയ്യാൻ ഒരു അറേ
+      let communityCertificates = [];
+
+      // --- 2. ഫയർബേസിൽ നിന്ന് ഡാറ്റ എടുക്കാനുള്ള ഫംഗ്ഷൻ ---
+      function fetchCommunityCertificates() {
+        db.ref("approved_certificates").on("value", (snapshot) => {
+          communityCertificates = [];
+          const data = snapshot.val();
+
+          if (data) {
+            // ഡാറ്റാബേസിലുള്ള ഓരോ സർട്ടിഫിക്കറ്റും എടുക്കുന്നു
+            Object.keys(data).forEach((key) => {
+              communityCertificates.push({
+                id: key,
+                text: data[key].text,
+                category: data[key].category,
+              });
+
+              // പുതിയ കാറ്റഗറി ആണെങ്കിൽ അത് ഡ്രോപ്പ്-ഡൗണിൽ ചേർക്കുന്നു
+              addCategoryToDropdown(data[key].category);
+            });
+          }
+          // ഡാറ്റ എടുത്തതിന് ശേഷം ലിസ്റ്റ് ഒന്നുകൂടി റെൻഡർ ചെയ്യുന്നു
+          renderCertificates();
+        });
+      }
+
+      // ഡ്രോപ്പ്-ഡൗണിൽ ഇല്ലാത്ത കാറ്റഗറി ആണെങ്കിൽ അത് പുതുതായി ചേർക്കാൻ
+      function addCategoryToDropdown(categoryName) {
+        const select = document.getElementById("categoryFilter");
+        let exists = false;
+        for (let i = 0; i < select.options.length; i++) {
+          if (select.options[i].value === categoryName) {
+            exists = true;
+            break;
+          }
+        }
+        if (!exists && categoryName) {
+          const newOption = document.createElement("option");
+          newOption.value = categoryName;
+          newOption.text = categoryName;
+          select.appendChild(newOption);
+        }
+      }
+
+      // പേജ് ലോഡ് ആകുമ്പോൾ ഡാറ്റ എടുക്കാൻ വിളിക്കുന്നു
+      window.addEventListener("load", () => {
+        fetchCommunityCertificates();
+      });
+
       // അപ്‌ലോഡ് ചെയ്ത ഇമേജ് ഡാറ്റ സ്റ്റോർ ചെയ്യാൻ
       let imgData = {
         sign: null,
@@ -670,28 +832,74 @@
       let savedCertificates =
         JSON.parse(localStorage.getItem("myCertificates")) || defaultCerts;
 
-      // UI-ൽ സർട്ടിഫിക്കറ്റ് ലിസ്റ്റ് കാണിക്കാനുള്ള ഫംഗ്ഷൻ
+      // UI-ൽ സർട്ടിഫിക്കറ്റ് ലിസ്റ്റ് കാണിക്കാനും ഫിൽറ്റർ ചെയ്യാനുമുള്ള ഫംഗ്ഷൻ
       function renderCertificates() {
         const container = document.getElementById("checkboxContainer");
+        if (!container) return;
         container.innerHTML = ""; // നിലവിലുള്ളവ ക്ലിയർ ചെയ്യുന്നു
 
-        savedCertificates.forEach((cert, index) => {
+        // 1. ലോക്കൽ സർട്ടിഫിക്കറ്റുകൾ (താങ്കൾ ടൈപ്പ് ചെയ്തവ) എടുക്കുന്നു
+        // ഇതിന് ഡിഫോൾട്ട് ആയി 'Salary' കാറ്റഗറി നൽകുന്നു, ഒപ്പം പഴയ ഇൻഡക്സ് സൂക്ഷിക്കുന്നു
+        let localCerts = savedCertificates.map((cert, index) => ({
+          text: cert,
+          category: "Salary",
+          source: "local",
+          originalIndex: index,
+        }));
+
+        // 2. ഫയർബേസിൽ നിന്നുള്ള കമ്മ്യൂണിറ്റി സർട്ടിഫിക്കറ്റുകൾ എടുക്കുന്നു
+        let commCerts = communityCertificates.map((cert) => ({
+          text: cert.text,
+          category: cert.category,
+          source: "community",
+        }));
+
+        // 3. രണ്ടും കൂടി ഒരൊറ്റ ലിസ്റ്റ് ആക്കുന്നു
+        let allCerts = [...localCerts, ...commCerts];
+
+        // 4. ഡ്രോപ്പ്-ഡൗണിലെ കാറ്റഗറി വെച്ച് ഫിൽറ്റർ ചെയ്യുന്നു
+        const selectedCategory = document.getElementById("categoryFilter")
+          ? document.getElementById("categoryFilter").value
+          : "All";
+        if (selectedCategory !== "All") {
+          allCerts = allCerts.filter(
+            (cert) => cert.category === selectedCategory,
+          );
+        }
+
+        // 5. ഫിൽറ്റർ ചെയ്തവ സ്ക്രീനിൽ കാണിക്കുന്നു
+        allCerts.forEach((cert) => {
           const label = document.createElement("label");
           label.className = "cert-item";
 
-          label.innerHTML = `
-                <input type="checkbox" value="${index}" onchange="buildPreview()">
-                <span class="cert-text" onclick="this.previousElementSibling.click()">${cert}</span>
+          // കമ്മ്യൂണിറ്റി സർട്ടിഫിക്കറ്റ് ആണെങ്കിൽ തിരിച്ചറിയാൻ ഒരു ചെറിയ ടാഗ്
+          const badge =
+            cert.source === "community"
+              ? '<span style="font-size:10px; color:#1976D2; background:#e3f2fd; padding:2px 5px; border-radius:3px; margin-left:5px;">Community</span>'
+              : "";
+
+          // ആക്ഷൻ ബട്ടണുകൾ: ലോക്കൽ ആണെങ്കിൽ മാത്രം എഡിറ്റ്/ഡിലീറ്റ് കാണിക്കുക
+          const actionButtons =
+            cert.source === "local"
+              ? `
                 <div class="cert-actions">
-                    <button class="action-btn" title="Edit" onclick="editCertificate(${index}, event)">✏️</button>
-                    <button class="action-btn" title="Delete" onclick="deleteCertificate(${index}, event)">🗑️</button>
+                    <button class="action-btn" title="Edit" onclick="editCertificate(${cert.originalIndex}, event)">✏️</button>
+                    <button class="action-btn" title="Delete" onclick="deleteCertificate(${cert.originalIndex}, event)">🗑️</button>
                 </div>
+          `
+              : `<div class="cert-actions"></div>`; // കമ്മ്യൂണിറ്റിക്ക് ബട്ടണുകൾ ഇല്ല
+
+          // HTML നിർമ്മിക്കുന്നു (Checkbox value ആയി സർട്ടിഫിക്കറ്റിന്റെ ടെക്സ്റ്റ് തന്നെ നൽകുന്നു)
+          label.innerHTML = `
+                <input type="checkbox" value="${cert.text}" data-source="${cert.source}" onchange="buildPreview()">
+                <span class="cert-text" onclick="this.previousElementSibling.click()">${cert.text} ${badge}</span>
+                ${actionButtons}
             `;
           container.appendChild(label);
         });
+
         buildPreview(); // ലിസ്റ്റ് മാറുമ്പോൾ പ്രിവ്യൂവും അപ്ഡേറ്റ് ചെയ്യുന്നു
       }
-
       // പുതിയ സർട്ടിഫിക്കറ്റ് ചേർക്കാൻ
       function addCertificate() {
         const newText = document.getElementById("newCertText").value.trim();
@@ -830,14 +1038,14 @@
 
         if (checkboxes.length === 0) {
           textDiv.innerHTML =
-            '<div class="placeholder-text">Please select certificates from the left panel...</div>';
+            '<div class="placeholder-text" style="color: #999; font-style: italic;">Please select certificates from the left panel...</div>';
           return;
         }
 
-        let html = "<ol>";
+        let html = "<ol style='padding-left: 20px; margin: 0;'>";
         checkboxes.forEach((cb) => {
-          const certIndex = cb.value;
-          html += `<li>${savedCertificates[certIndex]}</li>`;
+          // പുതിയ മാറ്റം: cb.value ഇപ്പോൾ സർട്ടിഫിക്കറ്റിന്റെ വാചകം തന്നെയാണ്!
+          html += `<li style="margin-bottom: 8px; text-align: justify;">${cb.value}</li>`;
         });
         html += "</ol>";
 
@@ -1083,6 +1291,42 @@
               console.log("ServiceWorker registration failed:", error);
             });
         });
+      }
+      // കാറ്റഗറി മാറ്റുമ്പോൾ ലിസ്റ്റ് റിഫ്രഷ് ചെയ്യാൻ
+      function filterCertificates() {
+        renderCertificates();
+      }
+      // പുതിയ സർട്ടിഫിക്കറ്റ് അഡ്മിൻ അപ്രൂവലിനായി ഫയർബേസിലേക്ക് അയക്കാൻ
+      function submitForApproval() {
+        const text = document.getElementById("newCommunityCert").value.trim();
+        const category = document
+          .getElementById("newCommunityCategory")
+          .value.trim();
+
+        if (!text || !category) {
+          alert("ദയവായി സർട്ടിഫിക്കറ്റും കാറ്റഗറിയും കൃത്യമായി നൽകുക!");
+          return;
+        }
+
+        // ഫയർബേസിലെ 'pending_certificates' എന്ന ഫോൾഡറിലേക്ക് സേവ് ചെയ്യുന്നു
+        db.ref("pending_certificates")
+          .push({
+            text: text,
+            category: category,
+            timestamp: firebase.database.ServerValue.TIMESTAMP,
+          })
+          .then(() => {
+            alert(
+              "✅ താങ്കളുടെ സർട്ടിഫിക്കറ്റ് വിജയകരമായി അയച്ചിട്ടുണ്ട്. അഡ്മിൻ പരിശോധിച്ച ശേഷം ഇത് പബ്ലിക് ലിസ്റ്റിൽ വരുന്നതാണ്!",
+            );
+
+            // അയച്ചതിന് ശേഷം ബോക്സ് കാലിയാക്കുന്നു
+            document.getElementById("newCommunityCert").value = "";
+            document.getElementById("newCommunityCategory").value = "";
+          })
+          .catch((error) => {
+            alert("Error submitting certificate: " + error.message);
+          });
       }
     </script>
   </body>
