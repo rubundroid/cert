@@ -8,25 +8,43 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f7f6; padding: 20px; max-width: 800px; margin: auto; }
-        h2 { color: #1565c0; border-bottom: 2px solid #1565c0; padding-bottom: 10px; }
+        h2 { color: #1565c0; border-bottom: 2px solid #1565c0; padding-bottom: 10px; margin-bottom: 30px; }
+        h3 { color: #f57f17; margin-top: 40px; border-bottom: 1px dashed #ccc; padding-bottom: 5px; }
+        h3.master-title { color: #2e7d32; }
+        
         .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-left: 5px solid #ffb300; }
+        .card.approved-card { border-left-color: #1976D2; } /* അപ്രൂവ് ആയവയ്ക്ക് നീല ബോർഡർ */
+        
         label { font-size: 13px; font-weight: bold; color: #555; }
         textarea, input { width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
-        button { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; }
+        button { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; }
+        
         .btn-approve { background-color: #2e7d32; color: white; margin-right: 10px; }
         .btn-approve:hover { background-color: #1b5e20; }
+        
+        .btn-update { background-color: #1976D2; color: white; margin-right: 10px; }
+        .btn-update:hover { background-color: #1565c0; }
+        
         .btn-delete { background-color: #d32f2f; color: white; }
         .btn-delete:hover { background-color: #b71c1c; }
-        .empty-msg { text-align: center; color: #888; margin-top: 50px; font-style: italic; }
+        
+        .empty-msg { text-align: center; color: #888; margin-top: 20px; font-style: italic; background: #eee; padding: 15px; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-    <h2>🛡️ Admin Panel - Pending Approvals</h2>
-    <p>മറ്റുള്ളവർ സബ്മിറ്റ് ചെയ്ത പുതിയ സർട്ടിഫിക്കറ്റുകൾ ഇവിടെ കാണാം. ആവശ്യമെങ്കിൽ തിരുത്തലുകൾ വരുത്തിയ ശേഷം അപ്രൂവ് ചെയ്യുക.</p>
+    <h2>🛡️ e-Cert Admin Dashboard</h2>
 
+    <h3>⏳ Pending Approvals (പുതിയവ)</h3>
+    <p style="font-size: 13px; color: #666;">മറ്റുള്ളവർ സബ്മിറ്റ് ചെയ്തവ. പരിശോധിച്ച് അപ്രൂവ് ചെയ്യുക.</p>
     <div id="pendingList">
         <div class="empty-msg">Loading pending certificates...</div>
+    </div>
+
+    <h3 class="master-title">✅ Master List (നിലവിൽ പബ്ലിക് ആയവ)</h3>
+    <p style="font-size: 13px; color: #666;">ടൂളിൽ എല്ലാവർക്കും കാണാൻ കഴിയുന്നവ. ഇവിടെ നിന്നും എഡിറ്റ് ചെയ്യുകയോ ഒഴിവാക്കുകയോ ചെയ്യാം.</p>
+    <div id="approvedList">
+        <div class="empty-msg">Loading master list...</div>
     </div>
 
     <script>
@@ -39,10 +57,14 @@
             messagingSenderId: "815130577533",
             appId: "1:815130577533:web:924e300fa217e78fc07f14"
         };
-        firebase.initializeApp(firebaseConfig);
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         const db = firebase.database();
 
-        // 2. Pending ഡാറ്റ വലിച്ചെടുക്കാൻ
+        // ---------------------------------------------------------
+        // PART A: PENDING CERTIFICATES (പുതിയവ അപ്രൂവ് ചെയ്യാൻ)
+        // ---------------------------------------------------------
         function loadPendingCertificates() {
             db.ref('pending_certificates').on('value', snapshot => {
                 const data = snapshot.val();
@@ -54,20 +76,19 @@
                     return;
                 }
 
-                // ഡാറ്റ ഉണ്ടെങ്കിൽ ഓരോന്നായി സ്ക്രീനിൽ കാണിക്കുക
                 Object.keys(data).forEach(key => {
                     const cert = data[key];
                     list.innerHTML += `
                         <div class="card" id="card_${key}">
                             <label>Certificate Text:</label>
-                            <textarea id="text_${key}" rows="4">${cert.text}</textarea>
+                            <textarea id="text_${key}" rows="3">${cert.text}</textarea>
                             
                             <label>Category:</label>
                             <input type="text" id="cat_${key}" value="${cert.category}">
                             
                             <div>
                                 <button class="btn-approve" onclick="approveCert('${key}')">✅ Approve & Publish</button>
-                                <button class="btn-delete" onclick="deleteCert('${key}')">🗑️ Reject (Delete)</button>
+                                <button class="btn-delete" onclick="deletePending('${key}')">🗑️ Reject</button>
                             </div>
                         </div>
                     `;
@@ -75,39 +96,83 @@
             });
         }
 
-        // 3. അപ്രൂവ് ചെയ്യാനുള്ള ഫംഗ്ഷൻ (ഇത് നേരെ മെയിൻ ലിസ്റ്റിലേക്ക് പോകും)
         function approveCert(key) {
-            // അഡ്മിൻ എഡിറ്റ് ചെയ്ത പുതിയ വാചകവും കാറ്റഗറിയും എടുക്കുന്നു
             const updatedText = document.getElementById('text_' + key).value.trim();
             const updatedCategory = document.getElementById('cat_' + key).value.trim();
-            
-            if(!updatedText || !updatedCategory) {
-                alert("Text and Category cannot be empty!");
-                return;
-            }
+            if(!updatedText || !updatedCategory) return alert("Text and Category cannot be empty!");
 
-            // 'approved_certificates' ലേക്ക് സേവ് ചെയ്യുന്നു
-            db.ref('approved_certificates').push({
-                text: updatedText,
-                category: updatedCategory
-            }).then(() => {
-                // സേവ് ചെയ്ത ശേഷം pending ലിസ്റ്റിൽ നിന്ന് ഡിലീറ്റ് ചെയ്യുന്നു
+            db.ref('approved_certificates').push({ text: updatedText, category: updatedCategory })
+            .then(() => {
                 db.ref('pending_certificates/' + key).remove();
-                alert("Certificate Approved and Published Successfully!");
-            }).catch(err => {
-                alert("Error: " + err.message);
+                alert("✅ Published Successfully!");
             });
         }
 
-        // 4. റിജക്ട് / ഡിലീറ്റ് ചെയ്യാനുള്ള ഫംഗ്ഷൻ
-        function deleteCert(key) {
-            if(confirm("ഈ സർട്ടിഫിക്കറ്റ് ഒഴിവാക്കണോ? (Are you sure you want to delete this?)")) {
+        function deletePending(key) {
+            if(confirm("ഈ പുതിയ സർട്ടിഫിക്കറ്റ് റിജക്ട് ചെയ്യണോ?")) {
                 db.ref('pending_certificates/' + key).remove();
             }
         }
 
-        // പേജ് ലോഡ് ആകുമ്പോൾ ഡാറ്റ എടുക്കുന്നു
-        window.onload = loadPendingCertificates;
+        // ---------------------------------------------------------
+        // PART B: APPROVED CERTIFICATES (നിലവിലുള്ളവ എഡിറ്റ് ചെയ്യാൻ)
+        // ---------------------------------------------------------
+        function loadApprovedCertificates() {
+            db.ref('approved_certificates').on('value', snapshot => {
+                const data = snapshot.val();
+                const list = document.getElementById('approvedList');
+                list.innerHTML = '';
+                
+                if (!data) {
+                    list.innerHTML = '<div class="empty-msg">Master list is empty!</div>';
+                    return;
+                }
+
+                Object.keys(data).forEach(key => {
+                    const cert = data[key];
+                    list.innerHTML += `
+                        <div class="card approved-card" id="app_card_${key}">
+                            <label>Certificate Text:</label>
+                            <textarea id="app_text_${key}" rows="3">${cert.text}</textarea>
+                            
+                            <label>Category:</label>
+                            <input type="text" id="app_cat_${key}" value="${cert.category}">
+                            
+                            <div>
+                                <button class="btn-update" onclick="updateApproved('${key}')">💾 Save Changes</button>
+                                <button class="btn-delete" onclick="deleteApproved('${key}')">🗑️ Delete from Public</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        function updateApproved(key) {
+            const updatedText = document.getElementById('app_text_' + key).value.trim();
+            const updatedCategory = document.getElementById('app_cat_' + key).value.trim();
+            if(!updatedText || !updatedCategory) return alert("Text and Category cannot be empty!");
+
+            // എഡിറ്റ് ചെയ്ത ഡാറ്റ അപ്ഡേറ്റ് ചെയ്യുന്നു
+            db.ref('approved_certificates/' + key).update({
+                text: updatedText,
+                category: updatedCategory
+            }).then(() => {
+                alert("💾 Changes Saved Successfully!");
+            });
+        }
+
+        function deleteApproved(key) {
+            if(confirm("ശ്രദ്ധിക്കുക! ഇത് പബ്ലിക് ലിസ്റ്റിൽ നിന്നും പൂർണ്ണമായും ഡിലീറ്റ് ആകും. തുടരണോ?")) {
+                db.ref('approved_certificates/' + key).remove();
+            }
+        }
+
+        // പേജ് ലോഡ് ആകുമ്പോൾ രണ്ട് ലിസ്റ്റും വിളിക്കുന്നു
+        window.onload = function() {
+            loadPendingCertificates();
+            loadApprovedCertificates();
+        };
     </script>
 </body>
 </html>
