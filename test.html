@@ -833,13 +833,12 @@
         JSON.parse(localStorage.getItem("myCertificates")) || defaultCerts;
 
       // UI-ൽ സർട്ടിഫിക്കറ്റ് ലിസ്റ്റ് കാണിക്കാനും ഫിൽറ്റർ ചെയ്യാനുമുള്ള ഫംഗ്ഷൻ
+      // UI-ൽ സർട്ടിഫിക്കറ്റ് ലിസ്റ്റ് കാണിക്കാനും ഫിൽറ്റർ ചെയ്യാനുമുള്ള ഫംഗ്ഷൻ
       function renderCertificates() {
         const container = document.getElementById("checkboxContainer");
         if (!container) return;
-        container.innerHTML = ""; // നിലവിലുള്ളവ ക്ലിയർ ചെയ്യുന്നു
+        container.innerHTML = "";
 
-        // 1. ലോക്കൽ സർട്ടിഫിക്കറ്റുകൾ (താങ്കൾ ടൈപ്പ് ചെയ്തവ) എടുക്കുന്നു
-        // ഇതിന് ഡിഫോൾട്ട് ആയി 'Salary' കാറ്റഗറി നൽകുന്നു, ഒപ്പം പഴയ ഇൻഡക്സ് സൂക്ഷിക്കുന്നു
         let localCerts = savedCertificates.map((cert, index) => ({
           text: cert,
           category: "Salary",
@@ -847,17 +846,14 @@
           originalIndex: index,
         }));
 
-        // 2. ഫയർബേസിൽ നിന്നുള്ള കമ്മ്യൂണിറ്റി സർട്ടിഫിക്കറ്റുകൾ എടുക്കുന്നു
         let commCerts = communityCertificates.map((cert) => ({
           text: cert.text,
           category: cert.category,
           source: "community",
         }));
 
-        // 3. രണ്ടും കൂടി ഒരൊറ്റ ലിസ്റ്റ് ആക്കുന്നു
         let allCerts = [...localCerts, ...commCerts];
 
-        // 4. ഡ്രോപ്പ്-ഡൗണിലെ കാറ്റഗറി വെച്ച് ഫിൽറ്റർ ചെയ്യുന്നു
         const selectedCategory = document.getElementById("categoryFilter")
           ? document.getElementById("categoryFilter").value
           : "All";
@@ -867,18 +863,15 @@
           );
         }
 
-        // 5. ഫിൽറ്റർ ചെയ്തവ സ്ക്രീനിൽ കാണിക്കുന്നു
         allCerts.forEach((cert) => {
           const label = document.createElement("label");
           label.className = "cert-item";
 
-          // കമ്മ്യൂണിറ്റി സർട്ടിഫിക്കറ്റ് ആണെങ്കിൽ തിരിച്ചറിയാൻ ഒരു ചെറിയ ടാഗ്
           const badge =
             cert.source === "community"
               ? '<span style="font-size:10px; color:#1976D2; background:#e3f2fd; padding:2px 5px; border-radius:3px; margin-left:5px;">Community</span>'
               : "";
 
-          // ആക്ഷൻ ബട്ടണുകൾ: ലോക്കൽ ആണെങ്കിൽ മാത്രം എഡിറ്റ്/ഡിലീറ്റ് കാണിക്കുക
           const actionButtons =
             cert.source === "local"
               ? `
@@ -887,18 +880,21 @@
                     <button class="action-btn" title="Delete" onclick="deleteCertificate(${cert.originalIndex}, event)">🗑️</button>
                 </div>
           `
-              : `<div class="cert-actions"></div>`; // കമ്മ്യൂണിറ്റിക്ക് ബട്ടണുകൾ ഇല്ല
+              : `<div class="cert-actions"></div>`;
 
-          // HTML നിർമ്മിക്കുന്നു (Checkbox value ആയി സർട്ടിഫിക്കറ്റിന്റെ ടെക്സ്റ്റ് തന്നെ നൽകുന്നു)
+          // പുതിയ മാറ്റം: ഈ സർട്ടിഫിക്കറ്റ് നമ്മൾ നേരത്തെ സെലക്ട് ചെയ്തവയിൽ ഉണ്ടോ എന്ന് നോക്കുന്നു
+          const isChecked = selectedCerts.includes(cert.text) ? "checked" : "";
+
+          // HTML നിർമ്മിക്കുന്നു (onchange ൽ toggleSelection കൊടുത്തത് ശ്രദ്ധിക്കുക)
           label.innerHTML = `
-                <input type="checkbox" value="${cert.text}" data-source="${cert.source}" onchange="buildPreview()">
+                <input type="checkbox" value="${cert.text}" data-source="${cert.source}" ${isChecked} onchange="toggleSelection(this)">
                 <span class="cert-text" onclick="this.previousElementSibling.click()">${cert.text} ${badge}</span>
                 ${actionButtons}
             `;
           container.appendChild(label);
         });
 
-        buildPreview(); // ലിസ്റ്റ് മാറുമ്പോൾ പ്രിവ്യൂവും അപ്ഡേറ്റ് ചെയ്യുന്നു
+        buildPreview();
       }
       // പുതിയ സർട്ടിഫിക്കറ്റ് ചേർക്കാൻ
       function addCertificate() {
@@ -1031,21 +1027,19 @@
 
       // ടിക്ക് ചെയ്തവ പ്രിവ്യൂവിൽ കൊണ്ടുവരാൻ
       function buildPreview() {
-        const checkboxes = document.querySelectorAll(
-          '#checkboxContainer input[type="checkbox"]:checked',
-        );
         const textDiv = document.getElementById("outText");
 
-        if (checkboxes.length === 0) {
+        // സെലക്ട് ചെയ്തവ ഒന്നും ഇല്ലെങ്കിൽ
+        if (selectedCerts.length === 0) {
           textDiv.innerHTML =
             '<div class="placeholder-text" style="color: #999; font-style: italic;">Please select certificates from the left panel...</div>';
           return;
         }
 
+        // മെമ്മറിയിൽ സേവ് ആയവ വെച്ച് ലിസ്റ്റ് ഉണ്ടാക്കുന്നു
         let html = "<ol style='padding-left: 20px; margin: 0;'>";
-        checkboxes.forEach((cb) => {
-          // പുതിയ മാറ്റം: cb.value ഇപ്പോൾ സർട്ടിഫിക്കറ്റിന്റെ വാചകം തന്നെയാണ്!
-          html += `<li style="margin-bottom: 8px; text-align: justify;">${cb.value}</li>`;
+        selectedCerts.forEach((text) => {
+          html += `<li style="margin-bottom: 8px; text-align: justify;">${text}</li>`;
         });
         html += "</ol>";
 
@@ -1327,6 +1321,22 @@
           .catch((error) => {
             alert("Error submitting certificate: " + error.message);
           });
+      }
+      // തിരഞ്ഞെടുക്കുന്ന സർട്ടിഫിക്കറ്റുകൾ ഓർമ്മിച്ചു വെക്കാൻ ഒരു അറേ
+      let selectedCerts = [];
+
+      // ചെക്ക്ബോക്സിൽ ടിക്ക് ചെയ്യുമ്പോഴും മാറ്റുമ്പോഴും വർക്ക് ചെയ്യാൻ
+      function toggleSelection(checkbox) {
+        if (checkbox.checked) {
+          // ടിക്ക് ചെയ്താൽ അറേയിലേക്ക് ചേർക്കുന്നു
+          if (!selectedCerts.includes(checkbox.value)) {
+            selectedCerts.push(checkbox.value);
+          }
+        } else {
+          // ടിക്ക് മാറ്റിയാൽ അറേയിൽ നിന്ന് ഒഴിവാക്കുന്നു
+          selectedCerts = selectedCerts.filter((val) => val !== checkbox.value);
+        }
+        buildPreview(); // പ്രിവ്യൂ അപ്ഡേറ്റ് ചെയ്യുന്നു
       }
     </script>
   </body>
