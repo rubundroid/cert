@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ml">
   <head>
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.json" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>e-Certificate Generator</title>
@@ -1068,6 +1068,22 @@
         loadImages(); // പുതിയ വരി: ഇമേജ് ഡ്രാഫ്റ്റ് ലോഡ് ചെയ്യുന്നു
         getInitialCount;
       };
+      // --- Service Worker Registration ---
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("/sw.js")
+            .then((registration) => {
+              console.log(
+                "ServiceWorker registration successful:",
+                registration.scope,
+              );
+            })
+            .catch((error) => {
+              console.log("ServiceWorker registration failed:", error);
+            });
+        });
+      }
     </script>
   </body>
 </html>
