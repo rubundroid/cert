@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Optimizer for e-Certificate</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; text-align: center; background: #f4f4f9; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .image-box { margin: 15px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; }
+        img { max-width: 100%; height: auto; margin-top: 10px; border: 1px dashed #999; background: #fff; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0056b3; }
+        input[type="file"] { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>സിഗ്നേച്ചർ / സീൽ സെറ്റ് ചെയ്യാം</h2>
+        <p>15KB യിൽ താഴെയുള്ള JPG ഫയലുകളായി മാറ്റുക (White Background)</p>
+        
+        <input type="file" id="imageInput" accept="image/*" multiple max="3">
+        <div id="outputArea"></div>
+    </div>
+
+    <script>
+        document.getElementById('imageInput').addEventListener('change', function(event) {
+            const files = event.target.files;
+            const outputArea = document.getElementById('outputArea');
+            outputArea.innerHTML = ''; // പഴയവ മായ്ക്കാൻ
+
+            if (files.length > 3) {
+                alert("പരമാവധി 3 ചിത്രങ്ങൾ മാത്രം തിരഞ്ഞെടുക്കുക.");
+                return;
+            }
+
+            Array.from(files).forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        processImage(img, index);
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        function processImage(img, index) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // സൈസ് വളരെ വലുതാണെങ്കിൽ ആദ്യം ഒന്ന് കുറയ്ക്കാൻ (മികച്ച കംപ്രഷന് വേണ്ടി)
+            const MAX_WIDTH = 400; 
+            let width = img.width;
+            let height = img.height;
+            if (width > MAX_WIDTH) {
+                height = Math.round((height * MAX_WIDTH) / width);
+                width = MAX_WIDTH;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            // 1. ബാക്ക്ഗ്രൗണ്ട് പൂർണ്ണമായും White ആക്കുക (PNG ട്രാൻസ്പെരൻസി ഒഴിവാക്കാൻ)
+            ctx.fillStyle = "#FFFFFF";
+            ctx.fillRect(0, 0, width, height);
+
+            // 2. ഇമേജ് ക്യാൻവാസിൽ വരയ്ക്കുക
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // 3. സ്കാൻ ചെയ്ത ഇമേജുകളിലെ മങ്ങിയ ബാക്ക്ഗ്രൗണ്ട് മാറ്റാൻ (Contrast/Threshold)
+            let imgData = ctx.getImageData(0, 0, width, height);
+            let data = imgData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                // പിക്സൽ ഇളം നിറമാണെങ്കിൽ (Off-white), അത് പൂർണ്ണമായും White ആക്കുന്നു
+                if (data[i] > 200 && data[i+1] > 200 && data[i+2] > 200) {
+                    data[i] = 255;   // Red
+                    data[i+1] = 255; // Green
+                    data[i+2] = 255; // Blue
+                }
+            }
+            ctx.putImageData(imgData, 0, 0);
+
+            // 4. സൈസ് 15KB യിൽ താഴെ ആകുന്നതുവരെ കംപ്രസ് ചെയ്യുക
+            let quality = 0.9;
+            let dataUrl = canvas.toDataURL('image/jpeg', quality);
+            let sizeKB = getBase64SizeKB(dataUrl);
+
+            // ലൂപ്പ് വഴി സൈസ് 15KB യിൽ താഴെ എത്തിക്കുന്നു
+            while (sizeKB > 15 && quality > 0.1) {
+                quality -= 0.1;
+                dataUrl = canvas.toDataURL('image/jpeg', quality);
+                sizeKB = getBase64SizeKB(dataUrl);
+            }
+
+            displayResult(dataUrl, sizeKB, index);
+        }
+
+        // Base64 സ്ട്രിംഗിൽ നിന്നും KB സൈസ് കണ്ടുപിടിക്കാൻ
+        function getBase64SizeKB(base64String) {
+            let padding = 0;
+            if (base64String.endsWith("==")) padding = 2;
+            else if (base64String.endsWith("=")) padding = 1;
+            
+            const base64Length = base64String.length - (base64String.indexOf(',') + 1);
+            const sizeInBytes = (base64Length * 0.75) - padding;
+            return sizeInBytes / 1024;
+        }
+
+        function displayResult(dataUrl, sizeKB, index) {
+            const box = document.createElement('div');
+            box.className = 'image-box';
+            
+            box.innerHTML = `
+                <h4>Image ${index + 1}</h4>
+                <p style="color: green; font-weight: bold;">Size: ${sizeKB.toFixed(2)} KB</p>
+                <img src="${dataUrl}" alt="Processed Image"><br>
+                <a href="${dataUrl}" download="optimized_sign_${index + 1}.jpg">
+                    <button style="margin-top:10px;">Download JPG</button>
+                </a>
+            `;
+            document.getElementById('outputArea').appendChild(box);
+        }
+    </script>
+</body>
+</html>
