@@ -1,6 +1,9 @@
 <!doctype html>
 <html lang="ml">
   <head>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <link rel="manifest" href="manifest.json" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>e-Certificate Generator</title>
@@ -23,16 +26,19 @@
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 15px;
       }
+
       .input-group {
         display: flex;
         flex-direction: column;
       }
+
       label {
         font-weight: 600;
         font-size: 0.85em;
         color: #555;
         margin-bottom: 5px;
       }
+
       input[type="text"] {
         padding: 8px;
         border: 1px solid #ccc;
@@ -61,6 +67,7 @@
         margin-bottom: 15px;
         padding-right: 5px;
       }
+
       .cert-item {
         display: flex;
         align-items: flex-start;
@@ -70,6 +77,7 @@
         border: 1px solid #e0e0e0;
         border-radius: 6px;
       }
+
       .cert-item input[type="checkbox"] {
         margin-top: 4px;
         margin-right: 10px;
@@ -77,6 +85,7 @@
         height: 18px;
         cursor: pointer;
       }
+
       .cert-text {
         font-size: 13px;
         color: #333;
@@ -84,12 +93,14 @@
         flex-grow: 1;
         cursor: pointer;
       }
+
       .cert-actions {
         margin-left: 10px;
         display: flex;
         gap: 5px;
         flex-shrink: 0;
       }
+
       .action-btn {
         background: none;
         border: none;
@@ -98,6 +109,7 @@
         padding: 2px 5px;
         border-radius: 3px;
       }
+
       .action-btn:hover {
         background: #e0e0e0;
       }
@@ -109,6 +121,7 @@
         border-radius: 6px;
         border: 1px dashed #0072ff;
       }
+
       textarea {
         width: 100%;
         padding: 8px;
@@ -126,6 +139,7 @@
         display: flex;
         gap: 10px;
       }
+
       .btn {
         flex: 1;
         padding: 10px;
@@ -135,14 +149,17 @@
         font-weight: bold;
         font-size: 14px;
       }
+
       .btn-pdf {
         background: #d32f2f;
         color: white;
       }
+
       .btn-text {
         background: #1976d2;
         color: white;
       }
+
       .btn-add {
         background: #0072ff;
         color: white;
@@ -155,15 +172,19 @@
         display: flex;
         justify-content: center;
       }
+
       .a4-page {
         background: #fff;
         width: 210mm;
-        min-height: 297mm; /* height മാറി പഴയതുപോലെ ആക്കി */
-        padding: 15mm 20mm; /* മുകളിൽ നിന്നുള്ള സ്പേസ് അല്പം കുറച്ചു */
+        min-height: 297mm;
+        /* height മാറി പഴയതുപോലെ ആക്കി */
+        padding: 15mm 20mm;
+        /* മുകളിൽ നിന്നുള്ള സ്പേസ് അല്പം കുറച്ചു */
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         box-sizing: border-box;
         position: relative;
       }
+
       .cert-header {
         font-family: "Times New Roman", Times, serif;
         text-align: center;
@@ -172,6 +193,7 @@
         margin-bottom: 10px;
         text-transform: uppercase;
       }
+
       .cert-title {
         font-family: "Times New Roman", Times, serif;
         text-align: center;
@@ -180,6 +202,7 @@
         margin-bottom: 30px;
         text-decoration: underline;
       }
+
       .cert-body {
         font-family: "Times New Roman", Times, serif;
         line-height: 1.8;
@@ -190,10 +213,12 @@
         padding: 10px;
         border-radius: 4px;
       }
+
       .cert-body ol {
         padding-left: 20px;
         margin: 0;
       }
+
       .cert-body li {
         margin-bottom: 10px;
         text-align: justify;
@@ -206,25 +231,31 @@
         margin-top: 40px;
         font-size: 14px;
       }
+
       .date-place {
         margin-top: 50px;
       }
+
       .signature-area {
         text-align: center;
         width: 250px;
       }
+
       .sign-space {
         height: 70px;
       }
+
       .designation,
       .pen-number {
         font-weight: bold;
         margin: 2px 0;
       }
+
       .placeholder-text {
         color: #888;
         font-style: italic;
       }
+
       /* പുതിയ ഇമേജ് അപ്‌ലോഡ് ബോക്സ് ഡിസൈൻ */
       .image-upload-box {
         background: #e8f5e9;
@@ -233,6 +264,7 @@
         border: 1px dashed #2e7d32;
         margin-top: 20px;
       }
+
       .image-upload-box h4 {
         color: #2e7d32;
         margin-top: 0;
@@ -241,22 +273,26 @@
         border-bottom: 1px solid #c8e6c9;
         padding-bottom: 8px;
       }
+
       .file-group {
         margin-bottom: 15px;
         display: flex;
         flex-direction: column;
         gap: 5px;
       }
+
       .file-group label {
         font-weight: 600;
         font-size: 13px;
         color: #333;
       }
+
       .file-group .hint {
         font-size: 11px;
         color: #666;
         font-weight: normal;
       }
+
       .file-input-styled {
         padding: 8px;
         background: #fff;
@@ -267,6 +303,7 @@
         width: 100%;
         box-sizing: border-box;
       }
+
       .btn-clear {
         background: #ffebee;
         color: #c62828;
@@ -280,12 +317,30 @@
         margin-top: 5px;
         transition: 0.3s;
       }
+
       .btn-clear:hover {
         background: #ffcdd2;
       }
     </style>
   </head>
+
   <body>
+    <div style="text-align: right; margin-bottom: 10px">
+      <button
+        onclick="clearProfile()"
+        style="
+          background: none;
+          border: none;
+          color: #d32f2f;
+          cursor: pointer;
+          font-size: 13px;
+          font-weight: bold;
+          text-decoration: underline;
+        "
+      >
+        ✗ Clear Office Info
+      </button>
+    </div>
     <div class="top-section">
       <div class="input-group">
         <label>Office Name</label>
@@ -343,18 +398,112 @@
           Select Certificates
         </h3>
 
+        <div
+          style="
+            margin-bottom: 15px;
+            background: #e3f2fd;
+            padding: 10px;
+            border-radius: 6px;
+          "
+        >
+          <label
+            for="categoryFilter"
+            style="font-size: 13px; font-weight: bold; color: #1565c0"
+            >Filter by Category:</label
+          >
+          <select
+            id="categoryFilter"
+            onchange="filterCertificates()"
+            style="
+              width: 100%;
+              padding: 8px;
+              margin-top: 5px;
+              border: 1px solid #90caf9;
+              border-radius: 4px;
+              outline: none;
+            "
+          >
+            <option value="All">All Certificates</option>
+            <option value="Salary">Salary</option>
+            <option value="DA Arrear">DA Arrear</option>
+            <option value="PF NRA">PF NRA</option>
+            <option value="Tour TA">Tour TA</option>
+            <option value="Medical">Medical Reimbursement</option>
+          </select>
+        </div>
+
         <div id="checkboxContainer"></div>
 
         <div class="add-new-box">
           <label>Add New Certificate Master</label>
           <textarea
             id="newCertText"
-            placeholder="പുതിയ സർട്ടിഫിക്കറ്റ് ഇവിടെ ടൈപ്പ് ചെയ്യുക..."
+            placeholder="പുതിയ സർട്ടിഫിക്കറ്റ് ഇവിടെ ഇംഗ്ലീഷില്‍ ടൈപ്പ് ചെയ്യുക..."
           ></textarea>
           <button class="btn btn-add" onclick="addCertificate()">
             + Add to List
           </button>
         </div>
+        <div
+          style="
+            margin-top: 25px;
+            padding: 15px;
+            background: #fff8e1;
+            border: 1px solid #ffe082;
+            border-radius: 6px;
+          "
+        >
+          <h5 style="margin-top: 0; margin-bottom: 10px; color: #f57f17">
+            🌟 Contribute to Master List
+          </h5>
+          <p style="font-size: 11px; color: #666; margin-bottom: 10px">
+            താങ്കളുടെ സർട്ടിഫിക്കറ്റുകൾ അഡ്മിൻ അപ്രൂവലിന് ശേഷം എല്ലാവർക്കും
+            ലഭ്യമാകും.
+          </p>
+
+          <textarea
+            id="newCommunityCert"
+            rows="3"
+            placeholder="Type certificate text here..."
+            style="
+              width: 100%;
+              margin-bottom: 8px;
+              padding: 8px;
+              border: 1px solid #ccc;
+              border-radius: 4px;
+            "
+          ></textarea>
+
+          <input
+            type="text"
+            id="newCommunityCategory"
+            placeholder="Category (e.g., Salary, PF NRA, Tour TA)"
+            style="
+              width: 100%;
+              margin-bottom: 10px;
+              padding: 8px;
+              border: 1px solid #ccc;
+              border-radius: 4px;
+            "
+          />
+
+          <button
+            onclick="submitForApproval()"
+            style="
+              width: 100%;
+              background: #fbc02d;
+              color: #000;
+              border: none;
+              padding: 10px;
+              font-weight: bold;
+              border-radius: 4px;
+              cursor: pointer;
+            "
+          >
+            Submit for Approval
+          </button>
+        </div>
+
         <div class="image-upload-box">
           <h4>Add Images for Manual Signing (Optional)</h4>
 
@@ -367,6 +516,11 @@
               accept="image/*"
               onchange="handleImageUpload(this, 'sign')"
             />
+            <small
+              id="signStatus"
+              style="color: #2e7d32; display: none; font-weight: bold"
+              >✅ [✓ Saved]</small
+            >
           </div>
 
           <div class="file-group">
@@ -378,6 +532,11 @@
               accept="image/*"
               onchange="handleImageUpload(this, 'desigSeal')"
             />
+            <small
+              id="desigSealStatus"
+              style="color: #2e7d32; display: none; font-weight: bold"
+              >✅ [✓ Saved]</small
+            >
           </div>
 
           <div class="file-group">
@@ -391,6 +550,11 @@
               accept="image/*"
               onchange="handleImageUpload(this, 'seal')"
             />
+            <small
+              id="sealStatus"
+              style="color: #2e7d32; display: none; font-weight: bold"
+              >✅ [✓ Saved]</small
+            >
           </div>
 
           <button class="btn-clear" onclick="clearImages()">
@@ -409,9 +573,7 @@
 
       <div class="right-panel">
         <div class="a4-page" id="certificate-content">
-          <div class="cert-header" id="outOffice">
-            Office Name
-          </div>
+          <div class="cert-header" id="outOffice">Office Name</div>
           <div class="cert-title">CERTIFICATES</div>
 
           <div class="cert-body" id="outText" contenteditable="true">
@@ -420,27 +582,179 @@
             </div>
           </div>
 
-          <div class="cert-footer">
-            <div class="date-place">
-              <b>Dated:</b> <span id="currentDate"></span>
+          <div
+            class="cert-footer"
+            style="
+              display: flex;
+              justify-content: space-between;
+              margin-top: 30px;
+              position: relative;
+            "
+          >
+            <div
+              class="footer-left"
+              style="width: 40%; position: relative; height: 130px"
+            >
+              <img
+                id="previewSeal"
+                src=""
+                style="
+                  display: none;
+                  position: absolute;
+                  left: 0px;
+                  bottom: 15px;
+                  width: 100px;
+                  height: 100px;
+                  mix-blend-mode: multiply;
+                "
+              />
+              <div style="position: absolute; left: 105px; bottom: 25px">
+                <b>Dated:</b> <span id="currentDate"></span>
+              </div>
             </div>
-            <div class="signature-area">
-              <div class="sign-space"></div>
+
+            <div
+              class="footer-right signature-area"
+              style="width: 50%; text-align: center; position: relative"
+            >
+              <img
+                id="previewDesigSeal"
+                src=""
+                style="
+                  display: none;
+                  position: absolute;
+                  left: 50%;
+                  transform: translateX(-50%);
+                  bottom: 110px;
+                  width: 170px;
+                  z-index: 1;
+                  mix-blend-mode: multiply;
+                "
+              />
+
+              <img
+                id="previewSign"
+                src=""
+                style="
+                  display: none;
+                  position: absolute;
+                  left: 50%;
+                  transform: translateX(-50%);
+                  bottom: 140px;
+                  width: 130px;
+                  z-index: 2;
+                  mix-blend-mode: multiply;
+                "
+              />
+
+              <div class="seal-spacer" style="height: 160px"></div>
+
               <p class="designation" id="outOfficer">DDO Name</p>
               <p class="pen-number">PEN <span id="outPen">of DDO</span></p>
               <p class="designation" id="outDesig">DDO designation</p>
-              <p class="designation" id="outOfficeSign">
-                Office Name
-              </p>
+              <p class="designation" id="outOfficeSign">Office Name</p>
             </div>
           </div>
         </div>
       </div>
     </div>
-<div id="counterContainer" style="display: none; text-align: center; font-size: 14px; color: #4b5563; margin-top: 15px; padding: 10px; background-color: #e0e7ff; border-radius: 8px;">
-            Count: <span id="countDisplay" style="font-weight: 900; color: #4f46e5; font-size: 16px;">0</span>
-        </div>
+    <div
+      id="counterContainer"
+      style="
+        display: none;
+        text-align: center;
+        font-size: 14px;
+        color: #4b5563;
+        margin-top: 15px;
+        padding: 10px;
+        background-color: #e0e7ff;
+        border-radius: 8px;
+      "
+    >
+      Count:
+      <span
+        id="countDisplay"
+        style="font-weight: 900; color: #4f46e5; font-size: 16px"
+        >0</span
+      >
+    </div>
     <script>
+      // --- 1. Firebase Initialization ---
+      const firebaseConfig = {
+        apiKey: "AIzaSyAckm66_JQYhNjzIdWTi24OAm8oGNq9niM",
+        authDomain: "e-cert-database.firebaseapp.com",
+        projectId: "e-cert-database",
+        storageBucket: "e-cert-database.firebasestorage.app",
+        messagingSenderId: "815130577533",
+        appId: "1:815130577533:web:924e300fa217e78fc07f14",
+      };
+
+      // ഫയർബേസ് സ്റ്റാർട്ട് ചെയ്യുന്നു
+      if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+      }
+      const db = firebase.database();
+
+      // കമ്മ്യൂണിറ്റി സർട്ടിഫിക്കറ്റുകൾ സേവ് ചെയ്യാൻ ഒരു അറേ (തുടക്കത്തിൽ ലോക്കൽ മെമ്മറിയിൽ നിന്ന് എടുക്കുന്നു)
+      let communityCertificates =
+        JSON.parse(localStorage.getItem("offlineCommunityCerts")) || [];
+
+      // --- 2. ഫയർബേസിൽ നിന്ന് ഡാറ്റ എടുക്കാനുള്ള ഫംഗ്ഷൻ ---
+      function fetchCommunityCertificates() {
+        // ഇൻ്റർനെറ്റ് ഇല്ലെങ്കിലും സ്ക്രീനിൽ കാണിക്കാൻ വേണ്ടി ആദ്യം ഒന്ന് റെൻഡർ ചെയ്യുന്നു
+        renderCertificates();
+
+        // ഇൻ്റർനെറ്റ് ഉണ്ടെങ്കിൽ ഫയർബേസിൽ നിന്ന് പുതിയത് വലിച്ചെടുക്കുന്നു
+        db.ref("approved_certificates").on("value", (snapshot) => {
+          let tempCerts = [];
+          const data = snapshot.val();
+
+          if (data) {
+            Object.keys(data).forEach((key) => {
+              tempCerts.push({
+                id: key,
+                text: data[key].text,
+                category: data[key].category,
+              });
+              addCategoryToDropdown(data[key].category);
+            });
+          }
+
+          communityCertificates = tempCerts;
+
+          // അടുത്ത തവണ ഓഫ്‌ലൈൻ ആയി വർക്ക് ചെയ്യാൻ ഇത് ഫോണിലേക്ക് സേവ് ചെയ്യുന്നു
+          localStorage.setItem(
+            "offlineCommunityCerts",
+            JSON.stringify(communityCertificates),
+          );
+
+          // ഡാറ്റ അപ്ഡേറ്റ് ആയതിനു ശേഷം ലിസ്റ്റ് ഒന്നുകൂടി റെൻഡർ ചെയ്യുന്നു
+          renderCertificates();
+        });
+      }
+      // ഡ്രോപ്പ്-ഡൗണിൽ ഇല്ലാത്ത കാറ്റഗറി ആണെങ്കിൽ അത് പുതുതായി ചേർക്കാൻ
+      function addCategoryToDropdown(categoryName) {
+        const select = document.getElementById("categoryFilter");
+        let exists = false;
+        for (let i = 0; i < select.options.length; i++) {
+          if (select.options[i].value === categoryName) {
+            exists = true;
+            break;
+          }
+        }
+        if (!exists && categoryName) {
+          const newOption = document.createElement("option");
+          newOption.value = categoryName;
+          newOption.text = categoryName;
+          select.appendChild(newOption);
+        }
+      }
+
+      // പേജ് ലോഡ് ആകുമ്പോൾ ഡാറ്റ എടുക്കാൻ വിളിക്കുന്നു
+      window.addEventListener("load", () => {
+        fetchCommunityCertificates();
+      });
+
       // അപ്‌ലോഡ് ചെയ്ത ഇമേജ് ഡാറ്റ സ്റ്റോർ ചെയ്യാൻ
       let imgData = {
         sign: null,
@@ -448,7 +762,7 @@
         desigSeal: null,
       };
 
-      // ഫയൽ അപ്‌ലോഡ് ഹാൻഡിൽ ചെയ്യാനും Base64 ആക്കാനും (20KB ലിമിറ്റോടെ)
+      // ഫയൽ അപ്‌ലോഡ് ഹാൻഡിൽ ചെയ്യാനും Base64 ആക്കാനും (15KB ലിമിറ്റോടെ)
       function handleImageUpload(input, type) {
         const file = input.files[0];
 
@@ -477,9 +791,13 @@
           reader.onload = function (e) {
             // Base64 ഡാറ്റ വേരിയബിളിലേക്ക് സേവ് ചെയ്യുന്നു
             imgData[type] = e.target.result;
+
+            // പുതിയ വരി: അപ്‌ലോഡ് ചെയ്ത ഉടനെ ഡ്രാഫ്റ്റ് ആയി സേവ് ആകാൻ
+            saveImages();
+            updateImagePreview(type, e.target.result);
+            document.getElementById(type + "Status").style.display = "block";
             alert(
-              type.toUpperCase() +
-                " image uploaded successfully. Download PDF to see it.",
+              type.toUpperCase() + " image uploaded and saved automatically.",
             );
           };
           reader.readAsDataURL(file);
@@ -489,9 +807,18 @@
       // അപ്‌ലോഡ് ചെയ്ത ഇമേജുകൾ ക്ലിയർ ചെയ്യാൻ (ഇതിൽ മാറ്റമില്ല)
       function clearImages() {
         imgData = { sign: null, seal: null, desigSeal: null };
+        localStorage.removeItem("savedCertImages");
         document.getElementById("signInput").value = "";
         document.getElementById("sealInput").value = "";
         document.getElementById("desigSealInput").value = "";
+        // പുതിയ മാറ്റം: പ്രിവ്യൂ ഇമേജുകളും സ്റ്റാറ്റസ് മെസ്സേജുകളും ഹൈഡ് ചെയ്യുന്നു
+        document.getElementById("previewSign").style.display = "none";
+        document.getElementById("previewSeal").style.display = "none";
+        document.getElementById("previewDesigSeal").style.display = "none";
+
+        document.getElementById("signStatus").style.display = "none";
+        document.getElementById("sealStatus").style.display = "none";
+        document.getElementById("desigSealStatus").style.display = "none";
         alert("All uploaded images cleared.");
       }
       document.getElementById("currentDate").innerText =
@@ -515,28 +842,70 @@
       let savedCertificates =
         JSON.parse(localStorage.getItem("myCertificates")) || defaultCerts;
 
-      // UI-ൽ സർട്ടിഫിക്കറ്റ് ലിസ്റ്റ് കാണിക്കാനുള്ള ഫംഗ്ഷൻ
+      // UI-ൽ സർട്ടിഫിക്കറ്റ് ലിസ്റ്റ് കാണിക്കാനും ഫിൽറ്റർ ചെയ്യാനുമുള്ള ഫംഗ്ഷൻ
+      // UI-ൽ സർട്ടിഫിക്കറ്റ് ലിസ്റ്റ് കാണിക്കാനും ഫിൽറ്റർ ചെയ്യാനുമുള്ള ഫംഗ്ഷൻ
       function renderCertificates() {
         const container = document.getElementById("checkboxContainer");
-        container.innerHTML = ""; // നിലവിലുള്ളവ ക്ലിയർ ചെയ്യുന്നു
+        if (!container) return;
+        container.innerHTML = "";
 
-        savedCertificates.forEach((cert, index) => {
+        let localCerts = savedCertificates.map((cert, index) => ({
+          text: cert,
+          category: "Salary",
+          source: "local",
+          originalIndex: index,
+        }));
+
+        let commCerts = communityCertificates.map((cert) => ({
+          text: cert.text,
+          category: cert.category,
+          source: "community",
+        }));
+
+        let allCerts = [...localCerts, ...commCerts];
+
+        const selectedCategory = document.getElementById("categoryFilter")
+          ? document.getElementById("categoryFilter").value
+          : "All";
+        if (selectedCategory !== "All") {
+          allCerts = allCerts.filter(
+            (cert) => cert.category === selectedCategory,
+          );
+        }
+
+        allCerts.forEach((cert) => {
           const label = document.createElement("label");
           label.className = "cert-item";
 
-          label.innerHTML = `
-                <input type="checkbox" value="${index}" onchange="buildPreview()">
-                <span class="cert-text" onclick="this.previousElementSibling.click()">${cert}</span>
+          const badge =
+            cert.source === "community"
+              ? '<span style="font-size:10px; color:#1976D2; background:#e3f2fd; padding:2px 5px; border-radius:3px; margin-left:5px;">Community</span>'
+              : "";
+
+          const actionButtons =
+            cert.source === "local"
+              ? `
                 <div class="cert-actions">
-                    <button class="action-btn" title="Edit" onclick="editCertificate(${index}, event)">✏️</button>
-                    <button class="action-btn" title="Delete" onclick="deleteCertificate(${index}, event)">🗑️</button>
+                    <button class="action-btn" title="Edit" onclick="editCertificate(${cert.originalIndex}, event)">✏️</button>
+                    <button class="action-btn" title="Delete" onclick="deleteCertificate(${cert.originalIndex}, event)">🗑️</button>
                 </div>
+          `
+              : `<div class="cert-actions"></div>`;
+
+          // പുതിയ മാറ്റം: ഈ സർട്ടിഫിക്കറ്റ് നമ്മൾ നേരത്തെ സെലക്ട് ചെയ്തവയിൽ ഉണ്ടോ എന്ന് നോക്കുന്നു
+          const isChecked = selectedCerts.includes(cert.text) ? "checked" : "";
+
+          // HTML നിർമ്മിക്കുന്നു (onchange ൽ toggleSelection കൊടുത്തത് ശ്രദ്ധിക്കുക)
+          label.innerHTML = `
+                <input type="checkbox" value="${cert.text}" data-source="${cert.source}" ${isChecked} onchange="toggleSelection(this)">
+                <span class="cert-text" onclick="this.previousElementSibling.click()">${cert.text} ${badge}</span>
+                ${actionButtons}
             `;
           container.appendChild(label);
         });
-        buildPreview(); // ലിസ്റ്റ് മാറുമ്പോൾ പ്രിവ്യൂവും അപ്ഡേറ്റ് ചെയ്യുന്നു
-      }
 
+        buildPreview();
+      }
       // പുതിയ സർട്ടിഫിക്കറ്റ് ചേർക്കാൻ
       function addCertificate() {
         const newText = document.getElementById("newCertText").value.trim();
@@ -576,6 +945,21 @@
         );
         renderCertificates();
       }
+      // അപ്‌ലോഡ് ചെയ്തതോ ലോഡ് ചെയ്തതോ ആയ ഇമേജുകൾ പ്രിവ്യൂവിൽ കാണിക്കാൻ
+      function updateImagePreview(type, imageSrc) {
+        if (type === "sign") {
+          document.getElementById("previewSign").src = imageSrc;
+          document.getElementById("previewSign").style.display = "block";
+        }
+        if (type === "seal") {
+          document.getElementById("previewSeal").src = imageSrc;
+          document.getElementById("previewSeal").style.display = "block";
+        }
+        if (type === "desigSeal") {
+          document.getElementById("previewDesigSeal").src = imageSrc;
+          document.getElementById("previewDesigSeal").style.display = "block";
+        }
+      }
 
       // 1. ഇൻപുട്ടിൽ ടൈപ്പ് ചെയ്യുന്നത് പ്രിവ്യൂവിൽ കാണിക്കാൻ
       function updatePreview() {
@@ -606,7 +990,35 @@
         };
         localStorage.setItem("myProfile", JSON.stringify(profile));
       }
+      // ഇമേജുകൾ ഡ്രാഫ്റ്റ് ആയി സേവ് ചെയ്യാൻ
+      function saveImages() {
+        localStorage.setItem("savedCertImages", JSON.stringify(imgData));
+      }
 
+      // പേജ് തുറക്കുമ്പോൾ സേവ് ചെയ്ത ഇമേജുകൾ തിരികെ എടുക്കാൻ
+      function loadImages() {
+        const storedImages = JSON.parse(
+          localStorage.getItem("savedCertImages"),
+        );
+        if (storedImages) {
+          imgData.sign = storedImages.sign || null;
+          imgData.seal = storedImages.seal || null;
+          imgData.desigSeal = storedImages.desigSeal || null;
+          // പുതിയ മാറ്റം: സേവ് ചെയ്ത ഇമേജുകൾ പ്രിവ്യൂവിലും കാണിക്കുന്നു, സ്റ്റാറ്റസ് അപ്ഡേറ്റ് ചെയ്യുന്നു
+          if (imgData.sign) {
+            updateImagePreview("sign", imgData.sign);
+            document.getElementById("signStatus").style.display = "block";
+          }
+          if (imgData.seal) {
+            updateImagePreview("seal", imgData.seal);
+            document.getElementById("sealStatus").style.display = "block";
+          }
+          if (imgData.desigSeal) {
+            updateImagePreview("desigSeal", imgData.desigSeal);
+            document.getElementById("desigSealStatus").style.display = "block";
+          }
+        }
+      }
       // 3. പേജ് ലോഡ് ആകുമ്പോൾ സേവ് ചെയ്ത വിവരങ്ങൾ തിരികെ എടുക്കാൻ
       function loadProfile() {
         const savedProfile = JSON.parse(localStorage.getItem("myProfile"));
@@ -625,21 +1037,19 @@
 
       // ടിക്ക് ചെയ്തവ പ്രിവ്യൂവിൽ കൊണ്ടുവരാൻ
       function buildPreview() {
-        const checkboxes = document.querySelectorAll(
-          '#checkboxContainer input[type="checkbox"]:checked',
-        );
         const textDiv = document.getElementById("outText");
 
-        if (checkboxes.length === 0) {
+        // സെലക്ട് ചെയ്തവ ഒന്നും ഇല്ലെങ്കിൽ
+        if (selectedCerts.length === 0) {
           textDiv.innerHTML =
-            '<div class="placeholder-text">Please select certificates from the left panel...</div>';
+            '<div class="placeholder-text" style="color: #999; font-style: italic;">Please select certificates from the left panel...</div>';
           return;
         }
 
-        let html = "<ol>";
-        checkboxes.forEach((cb) => {
-          const certIndex = cb.value;
-          html += `<li>${savedCertificates[certIndex]}</li>`;
+        // മെമ്മറിയിൽ സേവ് ആയവ വെച്ച് ലിസ്റ്റ് ഉണ്ടാക്കുന്നു
+        let html = "<ol style='padding-left: 20px; margin: 0;'>";
+        selectedCerts.forEach((text) => {
+          html += `<li style="margin-bottom: 8px; text-align: justify;">${text}</li>`;
         });
         html += "</ol>";
 
@@ -789,23 +1199,51 @@
         let textY = footerY + 30;
 
         // ടെക്സ്റ്റുകൾ എല്ലാം നടുക്കായി (align: "center") പ്രിൻ്റ് ചെയ്യുന്നു
-        doc.text(officerName, rightCenter, textY, { align: "center" });
-        textY += 5;
+        if (officerName) {
+          const splitOfficer = doc.splitTextToSize(officerName, 50);
+          splitOfficer.forEach((line) => {
+            doc.text(line, rightCenter, textY, { align: "center" });
+            textY += 5; // അടുത്ത വരിയിലേക്കുള്ള അകലം
+          });
+        }
         doc.text(`PEN ${pen}`, rightCenter, textY, { align: "center" });
         textY += 5;
-        doc.text(desig, rightCenter, textY, { align: "center" });
-        textY += 5;
+        if (desig) {
+          const splitDesig = doc.splitTextToSize(desig, 50);
+          splitDesig.forEach((line) => {
+            doc.text(line, rightCenter, textY, { align: "center" });
+            textY += 5;
+          });
+        }
 
         // വലിയ ഓഫീസ് പേര് വന്നാൽ അതിനെ രണ്ടോ മൂന്നോ വരികളാക്കി നടുക്ക് അലൈൻ ചെയ്യുന്നു
-        const splitSignOffice = doc.splitTextToSize(officeName, 50);
-        splitSignOffice.forEach((line) => {
-          doc.text(line, rightCenter, textY, { align: "center" });
-          textY += 5;
-        });
+        if (officeName) {
+          const splitOffice = doc.splitTextToSize(officeName, 50);
+          splitOffice.forEach((line) => {
+            doc.text(line, rightCenter, textY, { align: "center" });
+            textY += 5;
+          });
+        }
 
         doc.save("Certificate.pdf");
         incrementCounter();
       }
+      // 1. ഓഫീസ് വിവരങ്ങൾ മാത്രം ക്ലിയർ ചെയ്യാൻ
+      function clearProfile() {
+        if (confirm("ഓഫീസ് വിവരങ്ങൾ മായ്ച്ചു കളയണോ?")) {
+          localStorage.removeItem("myProfile"); // ലോക്കൽ സ്റ്റോറേജിൽ നിന്ന് ഡിലീറ്റ് ചെയ്യുന്നു
+
+          // കോളങ്ങൾ കാലിയാക്കുന്നു
+          document.getElementById("officeInput").value = "";
+          document.getElementById("officerInput").value = "";
+          document.getElementById("desigInput").value = "";
+          document.getElementById("penInput").value = "";
+
+          // പ്രിവ്യൂ അപ്ഡേറ്റ് ചെയ്യുന്നു
+          updatePreview();
+        }
+      }
+
       function copyText() {
         const text = document.getElementById("certificate-content").innerText;
         navigator.clipboard.writeText(text).then(() => {
@@ -813,42 +1251,115 @@
         });
         incrementCounter();
       }
-const counterNamespace = "cert-rubundroid"; 
-    const counterKey = "total-calculations";
+      const counterNamespace = "cert-rubundroid";
+      const counterKey = "total-calculations";
 
-    // 1. പേജ് തുറക്കുമ്പോൾ നിലവിലെ കൗണ്ട് കാണിക്കാൻ
-    function getInitialCount() {
-      fetch(`https://api.counterapi.dev/v1/${counterNamespace}/${counterKey}`)
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.count && data.count > 0) {
-            document.getElementById("countDisplay").innerText = data.count;
-            document.getElementById("counterContainer").style.display = "block";
-          }
-        })
-        .catch((error) => {
-          console.log("Counter blocked by browser or ad-blocker.");
-        });
-    }
+      // 1. പേജ് തുറക്കുമ്പോൾ നിലവിലെ കൗണ്ട് കാണിക്കാൻ
+      function getInitialCount() {
+        fetch(`https://api.counterapi.dev/v1/${counterNamespace}/${counterKey}`)
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.count && data.count > 0) {
+              document.getElementById("countDisplay").innerText = data.count;
+              document.getElementById("counterContainer").style.display =
+                "block";
+            }
+          })
+          .catch((error) => {
+            console.log("Counter blocked by browser or ad-blocker.");
+          });
+      }
 
-    // 2. ബട്ടൺ അമർത്തുമ്പോൾ കൗണ്ട് 1 കൂട്ടാൻ
-    function incrementCounter() {
-      fetch(`https://api.counterapi.dev/v1/${counterNamespace}/${counterKey}/up`)
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.count) {
-            document.getElementById("countDisplay").innerText = data.count;
-            document.getElementById("counterContainer").style.display = "block";
-          }
-        })
-        .catch((error) => console.log("Counter increment failed."));
-    }
+      // 2. ബട്ടൺ അമർത്തുമ്പോൾ കൗണ്ട് 1 കൂട്ടാൻ
+      function incrementCounter() {
+        fetch(
+          `https://api.counterapi.dev/v1/${counterNamespace}/${counterKey}/up`,
+        )
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.count) {
+              document.getElementById("countDisplay").innerText = data.count;
+              document.getElementById("counterContainer").style.display =
+                "block";
+            }
+          })
+          .catch((error) => console.log("Counter increment failed."));
+      }
 
       window.onload = function () {
         loadProfile(); // പ്രൊഫൈൽ ഡാറ്റ ലോഡ് ചെയ്യുന്നു
         renderCertificates(); // സർട്ടിഫിക്കറ്റുകൾ ലോഡ് ചെയ്യുന്നു
+        loadImages(); // പുതിയ വരി: ഇമേജ് ഡ്രാഫ്റ്റ് ലോഡ് ചെയ്യുന്നു
         getInitialCount;
       };
+      // --- Service Worker Registration ---
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("/sw.js")
+            .then((registration) => {
+              console.log(
+                "ServiceWorker registration successful:",
+                registration.scope,
+              );
+            })
+            .catch((error) => {
+              console.log("ServiceWorker registration failed:", error);
+            });
+        });
+      }
+      // കാറ്റഗറി മാറ്റുമ്പോൾ ലിസ്റ്റ് റിഫ്രഷ് ചെയ്യാൻ
+      function filterCertificates() {
+        renderCertificates();
+      }
+      // പുതിയ സർട്ടിഫിക്കറ്റ് അഡ്മിൻ അപ്രൂവലിനായി ഫയർബേസിലേക്ക് അയക്കാൻ
+      function submitForApproval() {
+        const text = document.getElementById("newCommunityCert").value.trim();
+        const category = document
+          .getElementById("newCommunityCategory")
+          .value.trim();
+
+        if (!text || !category) {
+          alert("ദയവായി സർട്ടിഫിക്കറ്റും കാറ്റഗറിയും കൃത്യമായി നൽകുക!");
+          return;
+        }
+
+        // ഫയർബേസിലെ 'pending_certificates' എന്ന ഫോൾഡറിലേക്ക് സേവ് ചെയ്യുന്നു
+        db.ref("pending_certificates")
+          .push({
+            text: text,
+            category: category,
+            timestamp: firebase.database.ServerValue.TIMESTAMP,
+          })
+          .then(() => {
+            alert(
+              "✅ താങ്കളുടെ സർട്ടിഫിക്കറ്റ് വിജയകരമായി അയച്ചിട്ടുണ്ട്. അഡ്മിൻ പരിശോധിച്ച ശേഷം ഇത് പബ്ലിക് ലിസ്റ്റിൽ വരുന്നതാണ്!",
+            );
+
+            // അയച്ചതിന് ശേഷം ബോക്സ് കാലിയാക്കുന്നു
+            document.getElementById("newCommunityCert").value = "";
+            document.getElementById("newCommunityCategory").value = "";
+          })
+          .catch((error) => {
+            alert("Error submitting certificate: " + error.message);
+          });
+      }
+      // തിരഞ്ഞെടുക്കുന്ന സർട്ടിഫിക്കറ്റുകൾ ഓർമ്മിച്ചു വെക്കാൻ ഒരു അറേ
+      let selectedCerts = [];
+
+      // ചെക്ക്ബോക്സിൽ ടിക്ക് ചെയ്യുമ്പോഴും മാറ്റുമ്പോഴും വർക്ക് ചെയ്യാൻ
+      function toggleSelection(checkbox) {
+        if (checkbox.checked) {
+          // ടിക്ക് ചെയ്താൽ അറേയിലേക്ക് ചേർക്കുന്നു
+          if (!selectedCerts.includes(checkbox.value)) {
+            selectedCerts.push(checkbox.value);
+          }
+        } else {
+          // ടിക്ക് മാറ്റിയാൽ അറേയിൽ നിന്ന് ഒഴിവാക്കുന്നു
+          selectedCerts = selectedCerts.filter((val) => val !== checkbox.value);
+        }
+        buildPreview(); // പ്രിവ്യൂ അപ്ഡേറ്റ് ചെയ്യുന്നു
+      }
     </script>
   </body>
 </html>
