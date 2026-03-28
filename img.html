@@ -3,31 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Optimizer for e-Certificate</title>
+    <title>Signature & Seal Optimizer</title>
     <style>
         body { font-family: sans-serif; padding: 20px; text-align: center; background: #f4f4f9; }
         .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .image-box { margin: 15px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; }
-        img { max-width: 100%; height: auto; margin-top: 10px; border: 1px dashed #999; background: #fff; }
-        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        button:hover { background: #0056b3; }
-        input[type="file"] { margin-bottom: 20px; }
+        .image-box { margin: 15px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; text-align: center; }
+        .preview-img { max-width: 100%; max-height: 150px; margin-top: 10px; border: 1px dashed #999; background: #fff; }
+        button { padding: 8px 15px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        button:hover { background: #218838; }
+        input[type="file"] { margin-bottom: 20px; width: 100%; }
+        .slider-container { margin-top: 15px; background: #eee; padding: 10px; border-radius: 5px; }
+        input[type="range"] { width: 80%; }
+        .status-text { font-weight: bold; color: #333; margin-top: 10px; }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>സിഗ്നേച്ചർ / സീൽ സെറ്റ് ചെയ്യാം</h2>
-        <p>15KB യിൽ താഴെയുള്ള JPG ഫയലുകളായി മാറ്റുക (White Background)</p>
+        <p>ബാക്ക്ഗ്രൗണ്ട് വെള്ളയാക്കാനും സൈസ് 15KB യിൽ താഴെയാക്കാനും</p>
         
         <input type="file" id="imageInput" accept="image/*" multiple max="3">
         <div id="outputArea"></div>
     </div>
 
     <script>
+        let originalImages = []; // ഒറിജിനൽ ഇമേജുകൾ സൂക്ഷിക്കാൻ
+
         document.getElementById('imageInput').addEventListener('change', function(event) {
             const files = event.target.files;
             const outputArea = document.getElementById('outputArea');
-            outputArea.innerHTML = ''; // പഴയവ മായ്ക്കാൻ
+            outputArea.innerHTML = ''; 
+            originalImages = [];
 
             if (files.length > 3) {
                 alert("പരമാവധി 3 ചിത്രങ്ങൾ മാത്രം തിരഞ്ഞെടുക്കുക.");
@@ -39,7 +45,9 @@
                 reader.onload = function(e) {
                     const img = new Image();
                     img.onload = function() {
-                        processImage(img, index);
+                        originalImages[index] = img; // ഇമേജ് സേവ് ചെയ്യുന്നു
+                        createUI(index); // ഇന്റർഫേസ് ഉണ്ടാക്കുന്നു
+                        processImage(index, 160); // ഡിഫോൾട്ട് വാല്യൂ (160) വെച്ച് പ്രോസസ്സ് ചെയ്യുന്നു
                     };
                     img.src = e.target.result;
                 };
@@ -47,11 +55,42 @@
             });
         });
 
-        function processImage(img, index) {
+        // ഓരോ ഇമേജിനുമുള്ള UI ബോക്സ് ഉണ്ടാക്കാൻ
+        function createUI(index) {
+            const outputArea = document.getElementById('outputArea');
+            const box = document.createElement('div');
+            box.className = 'image-box';
+            box.id = `box-${index}`;
+            
+            box.innerHTML = `
+                <h4>Image ${index + 1}</h4>
+                <img id="preview-${index}" class="preview-img" src="" alt="Processing..."><br>
+                <div class="status-text" id="size-${index}">Size: Calculating...</div>
+                
+                <div class="slider-container">
+                    <label for="slider-${index}">Background Remove (Threshold): <span id="val-${index}">160</span></label><br>
+                    <input type="range" id="slider-${index}" min="50" max="240" value="160" oninput="updateImage(${index}, this.value)">
+                </div>
+                
+                <a id="download-${index}" href="#" download="optimized_sign_${index + 1}.jpg">
+                    <button>Download JPG</button>
+                </a>
+            `;
+            outputArea.appendChild(box);
+        }
+
+        // സ്ലൈഡർ മാറ്റുമ്പോൾ ഇമേജ് വീണ്ടും പ്രോസസ്സ് ചെയ്യാൻ
+        window.updateImage = function(index, threshold) {
+            document.getElementById(`val-${index}`).innerText = threshold;
+            processImage(index, parseInt(threshold));
+        };
+
+        // മെയിൻ ഇമേജ് പ്രോസസ്സിങ് ഫംഗ്ഷൻ
+        function processImage(index, threshold) {
+            const img = originalImages[index];
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
 
-            // സൈസ് വളരെ വലുതാണെങ്കിൽ ആദ്യം ഒന്ന് കുറയ്ക്കാൻ (മികച്ച കംപ്രഷന് വേണ്ടി)
             const MAX_WIDTH = 400; 
             let width = img.width;
             let height = img.height;
@@ -63,65 +102,54 @@
             canvas.width = width;
             canvas.height = height;
 
-            // 1. ബാക്ക്ഗ്രൗണ്ട് പൂർണ്ണമായും White ആക്കുക (PNG ട്രാൻസ്പെരൻസി ഒഴിവാക്കാൻ)
+            // White Background fill
             ctx.fillStyle = "#FFFFFF";
             ctx.fillRect(0, 0, width, height);
-
-            // 2. ഇമേജ് ക്യാൻവാസിൽ വരയ്ക്കുക
             ctx.drawImage(img, 0, 0, width, height);
 
-            // 3. സ്കാൻ ചെയ്ത ഇമേജുകളിലെ മങ്ങിയ ബാക്ക്ഗ്രൗണ്ട് മാറ്റാൻ (Contrast/Threshold)
+            // Luminance ചെക്ക് ചെയ്ത് ബാക്ക്ഗ്രൗണ്ട് മാറ്റുന്നു
             let imgData = ctx.getImageData(0, 0, width, height);
             let data = imgData.data;
+
             for (let i = 0; i < data.length; i += 4) {
-                // പിക്സൽ ഇളം നിറമാണെങ്കിൽ (Off-white), അത് പൂർണ്ണമായും White ആക്കുന്നു
-                if (data[i] > 200 && data[i+1] > 200 && data[i+2] > 200) {
-                    data[i] = 255;   // Red
-                    data[i+1] = 255; // Green
-                    data[i+2] = 255; // Blue
+                let brightness = (0.299 * data[i]) + (0.587 * data[i+1]) + (0.114 * data[i+2]);
+
+                if (brightness > threshold) {
+                    data[i] = 255;   // R
+                    data[i+1] = 255; // G
+                    data[i+2] = 255; // B
                 }
             }
             ctx.putImageData(imgData, 0, 0);
 
-            // 4. സൈസ് 15KB യിൽ താഴെ ആകുന്നതുവരെ കംപ്രസ് ചെയ്യുക
+            // സൈസ് 15KB താഴെ ആക്കാൻ കംപ്രഷൻ
             let quality = 0.9;
             let dataUrl = canvas.toDataURL('image/jpeg', quality);
             let sizeKB = getBase64SizeKB(dataUrl);
 
-            // ലൂപ്പ് വഴി സൈസ് 15KB യിൽ താഴെ എത്തിക്കുന്നു
-            while (sizeKB > 15 && quality > 0.1) {
-                quality -= 0.1;
+            while (sizeKB > 15 && quality > 0.05) {
+                quality -= 0.05;
                 dataUrl = canvas.toDataURL('image/jpeg', quality);
                 sizeKB = getBase64SizeKB(dataUrl);
             }
 
-            displayResult(dataUrl, sizeKB, index);
+            // UI അപ്ഡേറ്റ് ചെയ്യുന്നു
+            document.getElementById(`preview-${index}`).src = dataUrl;
+            
+            const sizeElement = document.getElementById(`size-${index}`);
+            sizeElement.innerText = `Size: ${sizeKB.toFixed(2)} KB`;
+            sizeElement.style.color = sizeKB <= 15 ? 'green' : 'red'; // 15KB താഴെയാണെങ്കിൽ പച്ച നിറം
+
+            document.getElementById(`download-${index}`).href = dataUrl;
         }
 
-        // Base64 സ്ട്രിംഗിൽ നിന്നും KB സൈസ് കണ്ടുപിടിക്കാൻ
         function getBase64SizeKB(base64String) {
             let padding = 0;
             if (base64String.endsWith("==")) padding = 2;
             else if (base64String.endsWith("=")) padding = 1;
             
             const base64Length = base64String.length - (base64String.indexOf(',') + 1);
-            const sizeInBytes = (base64Length * 0.75) - padding;
-            return sizeInBytes / 1024;
-        }
-
-        function displayResult(dataUrl, sizeKB, index) {
-            const box = document.createElement('div');
-            box.className = 'image-box';
-            
-            box.innerHTML = `
-                <h4>Image ${index + 1}</h4>
-                <p style="color: green; font-weight: bold;">Size: ${sizeKB.toFixed(2)} KB</p>
-                <img src="${dataUrl}" alt="Processed Image"><br>
-                <a href="${dataUrl}" download="optimized_sign_${index + 1}.jpg">
-                    <button style="margin-top:10px;">Download JPG</button>
-                </a>
-            `;
-            document.getElementById('outputArea').appendChild(box);
+            return ((base64Length * 0.75) - padding) / 1024;
         }
     </script>
 </body>
