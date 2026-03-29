@@ -57,13 +57,14 @@
 
     <script>
 const firebaseConfig = {
-            apiKey: "AIzaSyAckm66_JQYhNjzIdWTi240Am8oGNq9niM",
-            authDomain: "e-cert-database.firebaseapp.com",
-            projectId: "e-cert-database",
-            storageBucket: "e-cert-database.firebasestorage.app",
-            messagingSenderId: "815130577533",
-            appId: "1:815130577533:web:924e300fa217e78fc07f14"
-        };
+  apiKey: "AIzaSyACkm66_JQYhNjzIdWtI24OAm8oGNq9niM",
+  authDomain: "e-cert-database.firebaseapp.com",
+  databaseURL: "https://e-cert-database-default-rtdb.firebaseio.com",
+  projectId: "e-cert-database",
+  storageBucket: "e-cert-database.firebasestorage.app",
+  messagingSenderId: "815130577533",
+  appId: "1:815130577533:web:924e300fa217e78fc07f14"
+};
         
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
