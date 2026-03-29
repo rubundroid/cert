@@ -6,7 +6,10 @@
       property="og:description"
       content="ബില്ലുകൾക്കൊപ്പം വെക്കാനുള്ള സർട്ടിഫിക്കറ്റുകൾ ഇനി വേഗത്തില്‍ തയ്യാറാക്കാം. സർട്ടിഫിക്കറ്റുകൾ മറ്റുള്ളവർക്ക് കൂടി ഷെയർ ചെയ്യൂ!"
     />
-    <meta property="og:image" content="https://cert.rubundroid.com/logo512.PNG" />
+    <meta
+      property="og:image"
+      content="https://cert.rubundroid.com/logo512.PNG"
+    />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="512" />
     <meta property="og:image:height" content="512" />
@@ -516,7 +519,22 @@
         </div>
 
         <div class="image-upload-box">
-          <h4>Add Images for Manual Signing (Optional)</h4>
+          <h4>
+            Add Images for Manual Signing (Optional)
+            <a
+              href="https://cert.rubundroid.com/img"
+              target="_blank"
+              title="Crop/Edit Images"
+              style="
+                text-decoration: none;
+                font-size: 16px;
+                margin-left: 8px;
+                color: #1565c0;
+              "
+            >
+              ✂️
+            </a>
+          </h4>
 
           <div class="file-group">
             <label>Ink Signature <span class="hint">(Max 15KB)</span></label>
@@ -691,15 +709,15 @@
     </div>
     <script>
       // --- 1. Firebase Initialization ---
-const firebaseConfig = {
-  apiKey: "AIzaSyACkm66_JQYhNjzIdWtI24OAm8oGNq9niM",
-  authDomain: "e-cert-database.firebaseapp.com",
-  databaseURL: "https://e-cert-database-default-rtdb.firebaseio.com",
-  projectId: "e-cert-database",
-  storageBucket: "e-cert-database.firebasestorage.app",
-  messagingSenderId: "815130577533",
-  appId: "1:815130577533:web:924e300fa217e78fc07f14"
-};
+      const firebaseConfig = {
+        apiKey: "AIzaSyACkm66_JQYhNjzIdWtI24OAm8oGNq9niM",
+        authDomain: "e-cert-database.firebaseapp.com",
+        databaseURL: "https://e-cert-database-default-rtdb.firebaseio.com",
+        projectId: "e-cert-database",
+        storageBucket: "e-cert-database.firebasestorage.app",
+        messagingSenderId: "815130577533",
+        appId: "1:815130577533:web:924e300fa217e78fc07f14",
+      };
 
       // ഫയർബേസ് സ്റ്റാർട്ട് ചെയ്യുന്നു
       if (!firebase.apps.length) {
