@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ecert-cache-v6';
+const CACHE_NAME = 'ecert-cache-v7';
 
 // ഓഫ്ലൈൻ ആയി വർക്ക് ചെയ്യാൻ സേവ് ചെയ്തു വെക്കേണ്ട ഫയലുകൾ
 const urlsToCache = [
