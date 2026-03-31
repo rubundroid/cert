@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Signature & Seal Optimizer</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; text-align: center; background: #e9ecef; color: #333; }
+        .container { max-width: 650px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        h2 { color: #0056b3; }
+        .image-box { margin: 20px 0; padding: 20px; border: 1px solid #dee2e6; border-radius: 10px; background: #f8f9fa; }
+        .preview-img { max-width: 100%; max-height: 200px; margin-top: 15px; border: 2px dashed #adb5bd; background: #fff; border-radius: 5px; }
+        button { padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 15px; font-size: 16px; transition: background 0.3s; }
+        button:hover { background: #218838; }
+        input[type="file"] { margin-bottom: 20px; width: 100%; padding: 10px; background: #f1f3f5; border: 1px dashed #ced4da; border-radius: 5px; cursor: pointer; }
+        .controls-container { margin-top: 20px; background: #e9ecef; padding: 15px; border-radius: 8px; text-align: left; }
+        .control-group { margin-bottom: 12px; }
+        .control-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; color: #495057; }
+        input[type="range"] { width: 100%; cursor: pointer; }
+        .val-display { font-weight: normal; color: #007bff; float: right; font-weight: bold; }
+        .status-text { font-weight: bold; font-size: 15px; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>സിഗ്നേച്ചർ / സീൽ ഓപ്റ്റിമൈസർ (Pro)</h2>
+        <p>Auto Crop, Color Boost & White Background (< 15KB)</p>
+        
+        <input type="file" id="imageInput" accept="image/*" multiple max="3">
+        <div id="outputArea"></div>
+    </div>
+
+    <script>
+        let originalImages = []; 
+
+        document.getElementById('imageInput').addEventListener('change', function(event) {
+            const files = event.target.files;
+            const outputArea = document.getElementById('outputArea');
+            outputArea.innerHTML = ''; 
+            originalImages = [];
+
+            if (files.length > 3) {
+                alert("പരമാവധി 3 ചിത്രങ്ങൾ മാത്രം തിരഞ്ഞെടുക്കുക.");
+                return;
+            }
+
+            Array.from(files).forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        originalImages[index] = img; 
+                        createUI(index);
+                        processImage(index, 160, 50, 0); 
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        function createUI(index) {
+            const outputArea = document.getElementById('outputArea');
+            const box = document.createElement('div');
+            box.className = 'image-box';
+            
+            box.innerHTML = `
+                <h4>Image ${index + 1}</h4>
+                <img id="preview-${index}" class="preview-img" src="" alt="Processing..."><br>
+                <div class="status-text" id="size-${index}">Size: Calculating...</div>
+                
+                <div class="controls-container">
+                    <div class="control-group">
+                        <label>ബാക്ക്ഗ്രൗണ്ട് കളയുക (Threshold): <span class="val-display" id="val-t-${index}">160</span></label>
+                        <input type="range" id="slider-t-${index}" min="50" max="230" value="160" oninput="updateUIAndProcess(${index})">
+                    </div>
+                    <div class="control-group">
+                        <label>നിറങ്ങളുടെ തെളിച്ചം (Vibrancy): <span class="val-display" id="val-v-${index}">50</span></label>
+                        <input type="range" id="slider-v-${index}" min="0" max="150" value="50" oninput="updateUIAndProcess(${index})">
+                    </div>
+                </div>
+                
+                <a id="download-${index}" href="#" download="cropped_sign_${index + 1}.jpg">
+                    <button>Download JPG</button>
+                </a>
+            `;
+            outputArea.appendChild(box);
+        }
+
+        window.updateUIAndProcess = function(index) {
+            const threshold = parseInt(document.getElementById(`slider-t-${index}`).value);
+            const vibrancy = parseInt(document.getElementById(`slider-v-${index}`).value);
+
+            document.getElementById(`val-t-${index}`).innerText = threshold;
+            document.getElementById(`val-v-${index}`).innerText = vibrancy;
+
+            processImage(index, threshold, vibrancy, 0);
+        };
+
+        function processImage(index, threshold, vibrancy, smoothness) {
+            const img = originalImages[index];
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            const MAX_WIDTH = 600; 
+            let width = img.width;
+            let height = img.height;
+            if (width > MAX_WIDTH) {
+                height = Math.round((height * MAX_WIDTH) / width);
+                width = MAX_WIDTH;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            ctx.drawImage(img, 0, 0, width, height);
+            let imgData = ctx.getImageData(0, 0, width, height);
+            let data = imgData.data;
+
+            const vibFactor = (vibrancy / 100) + 1; 
+
+            // പിക്സൽ പ്രോസസ്സിംഗ് & Auto Crop കോർഡിനേറ്റ്സ് കണ്ടെത്തൽ
+            let minX = width, minY = height, maxX = 0, maxY = 0;
+            let hasInk = false;
+
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    let i = (y * width + x) * 4;
+                    let r = data[i], g = data[i+1], b = data[i+2];
+                    let brightness = (0.299 * r) + (0.587 * g) + (0.114 * b);
+
+                    if (brightness > threshold) {
+                        data[i+3] = 0; // വെള്ള ബാക്ക്ഗ്രൗണ്ട് സുതാര്യമാക്കുന്നു (Transparent)
+                    } else {
+                        // മഷി കണ്ടെത്തി (Ink Pixel)
+                        hasInk = true;
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
+
+                        if (vibrancy > 0) {
+                            let avg = (r + g + b) / 3;
+                            data[i]   = Math.min(255, Math.max(0, avg + vibFactor * (r - avg))); 
+                            data[i+1] = Math.min(255, Math.max(0, avg + vibFactor * (g - avg))); 
+                            data[i+2] = Math.min(255, Math.max(0, avg + vibFactor * (b - avg))); 
+                        }
+                    }
+                }
+            }
+            
+            ctx.putImageData(imgData, 0, 0);
+
+            // Auto Crop Logic (Padding ചേർക്കുന്നു)
+            let cropPadding = 15; // ഒപ്പിന് ചുറ്റും കുറച്ച് സ്പേസ് നിലനിർത്താൻ
+            if (!hasInk) {
+                minX = 0; minY = 0; maxX = width; maxY = height;
+            } else {
+                minX = Math.max(0, minX - cropPadding);
+                minY = Math.max(0, minY - cropPadding);
+                maxX = Math.min(width, maxX + cropPadding);
+                maxY = Math.min(height, maxY + cropPadding);
+            }
+
+            let cropWidth = maxX - minX;
+            let cropHeight = maxY - minY;
+
+            // ഫൈനൽ ഔട്ട്പുട്ട് ക്യാൻവാസ് (ക്രോപ്പ് ചെയ്തത്)
+            const outCanvas = document.createElement('canvas');
+            outCanvas.width = cropWidth;
+            outCanvas.height = cropHeight;
+            const outCtx = outCanvas.getContext('2d');
+            
+            // വൈറ്റ് ബാക്ക്ഗ്രൗണ്ട് കൊടുക്കുന്നു
+            outCtx.fillStyle = "#FFFFFF";
+            outCtx.fillRect(0, 0, cropWidth, cropHeight);
+            
+            // ക്രോപ്പ് ചെയ്ത ഭാഗം മാത്രം വരയ്ക്കുന്നു
+            outCtx.drawImage(canvas, minX, minY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+
+            // സൈസ് 15KB യിൽ താഴെയാക്കുന്നു
+            let quality = 0.95;
+            let dataUrl = outCanvas.toDataURL('image/jpeg', quality);
+            let sizeKB = getBase64SizeKB(dataUrl);
+
+            while (sizeKB > 15 && quality > 0.05) {
+                quality -= 0.05;
+                dataUrl = outCanvas.toDataURL('image/jpeg', quality);
+                sizeKB = getBase64SizeKB(dataUrl);
+            }
+
+            // UI അപ്ഡേറ്റ്
+            document.getElementById(`preview-${index}`).src = dataUrl;
+            
+            const sizeElement = document.getElementById(`size-${index}`);
+            sizeElement.innerText = `Size: ${sizeKB.toFixed(2)} KB`;
+            sizeElement.style.color = sizeKB <= 15 ? 'green' : 'red';
+
+            document.getElementById(`download-${index}`).href = dataUrl;
+        }
+
+        function getBase64SizeKB(base64String) {
+            let padding = 0;
+            if (base64String.endsWith("==")) padding = 2;
+            else if (base64String.endsWith("=")) padding = 1;
+            const base64Length = base64String.length - (base64String.indexOf(',') + 1);
+            return ((base64Length * 0.75) - padding) / 1024;
+        }
+    </script>
+</body>
+</html>
