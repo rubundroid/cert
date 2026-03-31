@@ -3,28 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Signature & Seal Optimizer</title>
+    <title>Super Color Mashi & Auto Crop</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; text-align: center; background: #e9ecef; color: #333; }
+        body { font-family: sans-serif; padding: 20px; text-align: center; background: #f0f2f5; color: #333; }
         .container { max-width: 650px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        h2 { color: #0056b3; }
-        .image-box { margin: 20px 0; padding: 20px; border: 1px solid #dee2e6; border-radius: 10px; background: #f8f9fa; }
-        .preview-img { max-width: 100%; max-height: 200px; margin-top: 15px; border: 2px dashed #adb5bd; background: #fff; border-radius: 5px; }
+        h2 { color: #007bff; }
+        .image-box { margin: 20px 0; padding: 20px; border: 1px solid #e1e4e8; border-radius: 10px; background: #fafafa; }
+        .preview-img { max-width: 100%; max-height: 180px; margin-top: 15px; border: 1px dashed #b1b1b1; background: #fff; border-radius: 5px; }
         button { padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 15px; font-size: 16px; transition: background 0.3s; }
         button:hover { background: #218838; }
-        input[type="file"] { margin-bottom: 20px; width: 100%; padding: 10px; background: #f1f3f5; border: 1px dashed #ced4da; border-radius: 5px; cursor: pointer; }
-        .controls-container { margin-top: 20px; background: #e9ecef; padding: 15px; border-radius: 8px; text-align: left; }
+        input[type="file"] { margin-bottom: 20px; width: 100%; padding: 10px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 5px; cursor: pointer; }
+        .controls-container { margin-top: 20px; background: #eee; padding: 15px; border-radius: 8px; text-align: left; }
         .control-group { margin-bottom: 12px; }
-        .control-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; color: #495057; }
+        .control-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
         input[type="range"] { width: 100%; cursor: pointer; }
-        .val-display { font-weight: normal; color: #007bff; float: right; font-weight: bold; }
+        .val-display { font-weight: normal; color: #666; float: right; font-weight: bold; }
         .status-text { font-weight: bold; font-size: 15px; margin-top: 15px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>സിഗ്നേച്ചർ / സീൽ ഓപ്റ്റിമൈസർ (Pro)</h2>
-        <p>Auto Crop, Color Boost & White Background (< 15KB)</p>
+        <h2>സിഗ്നേച്ചർ / സീൽ ഓപ്റ്റിമൈസർ</h2>
+        <p>കളർ ബൂസ്റ്റ് + വൈറ്റ് ബാക്ക്ഗ്രൗണ്ട് + ഓട്ടോ ക്രോപ്പ് (< 15KB)</p>
         
         <input type="file" id="imageInput" accept="image/*" multiple max="3">
         <div id="outputArea"></div>
@@ -51,7 +51,7 @@
                     img.onload = function() {
                         originalImages[index] = img; 
                         createUI(index);
-                        processImage(index, 160, 50, 0); 
+                        processImage(index, 160, 50, 1); 
                     };
                     img.src = e.target.result;
                 };
@@ -78,6 +78,10 @@
                         <label>നിറങ്ങളുടെ തെളിച്ചം (Vibrancy): <span class="val-display" id="val-v-${index}">50</span></label>
                         <input type="range" id="slider-v-${index}" min="0" max="150" value="50" oninput="updateUIAndProcess(${index})">
                     </div>
+                    <div class="control-group">
+                        <label>ക്ലാരിറ്റി (Smoothness): <span class="val-display" id="val-s-${index}">1</span></label>
+                        <input type="range" id="slider-s-${index}" min="0" max="10" value="1" step="0.1" oninput="updateUIAndProcess(${index})">
+                    </div>
                 </div>
                 
                 <a id="download-${index}" href="#" download="cropped_sign_${index + 1}.jpg">
@@ -90,11 +94,13 @@
         window.updateUIAndProcess = function(index) {
             const threshold = parseInt(document.getElementById(`slider-t-${index}`).value);
             const vibrancy = parseInt(document.getElementById(`slider-v-${index}`).value);
+            const smoothness = parseFloat(document.getElementById(`slider-s-${index}`).value);
 
             document.getElementById(`val-t-${index}`).innerText = threshold;
             document.getElementById(`val-v-${index}`).innerText = vibrancy;
+            document.getElementById(`val-s-${index}`).innerText = smoothness.toFixed(1);
 
-            processImage(index, threshold, vibrancy, 0);
+            processImage(index, threshold, vibrancy, smoothness);
         };
 
         function processImage(index, threshold, vibrancy, smoothness) {
@@ -113,13 +119,21 @@
             canvas.width = width;
             canvas.height = height;
 
+            if(smoothness > 0) {
+                ctx.filter = `blur(${smoothness}px)`;
+            } else {
+                ctx.filter = 'none';
+            }
+
             ctx.drawImage(img, 0, 0, width, height);
+            ctx.filter = 'none';
+
             let imgData = ctx.getImageData(0, 0, width, height);
             let data = imgData.data;
 
             const vibFactor = (vibrancy / 100) + 1; 
 
-            // പിക്സൽ പ്രോസസ്സിംഗ് & Auto Crop കോർഡിനേറ്റ്സ് കണ്ടെത്തൽ
+            // Auto Crop കോർഡിനേറ്റുകൾ കണ്ടുപിടിക്കാൻ
             let minX = width, minY = height, maxX = 0, maxY = 0;
             let hasInk = false;
 
@@ -130,15 +144,15 @@
                     let brightness = (0.299 * r) + (0.587 * g) + (0.114 * b);
 
                     if (brightness > threshold) {
-                        data[i+3] = 0; // വെള്ള ബാക്ക്ഗ്രൗണ്ട് സുതാര്യമാക്കുന്നു (Transparent)
+                        data[i+3] = 0; // ബാക്ക്ഗ്രൗണ്ട് സുതാര്യമാക്കുന്നു
                     } else {
-                        // മഷി കണ്ടെത്തി (Ink Pixel)
                         hasInk = true;
                         if (x < minX) minX = x;
                         if (x > maxX) maxX = x;
                         if (y < minY) minY = y;
                         if (y > maxY) maxY = y;
 
+                        // മഷിയുടെ നിറം വർദ്ധിപ്പിക്കുന്നു
                         if (vibrancy > 0) {
                             let avg = (r + g + b) / 3;
                             data[i]   = Math.min(255, Math.max(0, avg + vibFactor * (r - avg))); 
@@ -151,8 +165,8 @@
             
             ctx.putImageData(imgData, 0, 0);
 
-            // Auto Crop Logic (Padding ചേർക്കുന്നു)
-            let cropPadding = 15; // ഒപ്പിന് ചുറ്റും കുറച്ച് സ്പേസ് നിലനിർത്താൻ
+            // ക്രോപ്പ് ചെയ്യാനുള്ള അളവുകൾ (Padding ചേർത്ത്)
+            let cropPadding = 15;
             if (!hasInk) {
                 minX = 0; minY = 0; maxX = width; maxY = height;
             } else {
@@ -165,13 +179,13 @@
             let cropWidth = maxX - minX;
             let cropHeight = maxY - minY;
 
-            // ഫൈനൽ ഔട്ട്പുട്ട് ക്യാൻവാസ് (ക്രോപ്പ് ചെയ്തത്)
+            // ഫൈനൽ ഔട്ട്പുട്ട് ക്യാൻവാസ്
             const outCanvas = document.createElement('canvas');
             outCanvas.width = cropWidth;
             outCanvas.height = cropHeight;
             const outCtx = outCanvas.getContext('2d');
             
-            // വൈറ്റ് ബാക്ക്ഗ്രൗണ്ട് കൊടുക്കുന്നു
+            // വൈറ്റ് ബാക്ക്ഗ്രൗണ്ട്
             outCtx.fillStyle = "#FFFFFF";
             outCtx.fillRect(0, 0, cropWidth, cropHeight);
             
