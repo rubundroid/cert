@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Auto-Crop & Optimizer</title>
+    <title>Pro Auto-Crop & Optimizer</title>
     <style>
         body { font-family: sans-serif; padding: 20px; text-align: center; background: #f0f2f5; color: #333; }
         .container { max-width: 650px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
         h2 { color: #007bff; }
         .image-box { margin: 20px 0; padding: 20px; border: 1px solid #e1e4e8; border-radius: 10px; background: #fafafa; }
-        .preview-img { max-width: 100%; max-height: 200px; margin-top: 15px; border: 2px dashed #007bff; background: #fff; border-radius: 5px; }
+        .preview-img { max-width: 100%; max-height: 250px; margin-top: 15px; border: 2px dashed #007bff; background: #fff; border-radius: 5px; }
         button { padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 15px; font-size: 16px; transition: background 0.3s; }
         button:hover { background: #218838; }
         input[type="file"] { margin-bottom: 20px; width: 100%; padding: 10px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 5px; cursor: pointer; }
@@ -24,7 +24,7 @@
 <body>
     <div class="container">
         <h2>സിഗ്നേച്ചർ / സീൽ ഓപ്റ്റിമൈസർ</h2>
-        <p>Smart Auto Crop & Color Adjustment (< 15KB)</p>
+        <p>Edge Detection Auto Crop + Color Adjustment (< 15KB)</p>
         
         <input type="file" id="imageInput" accept="image/*" multiple max="3">
         <div id="outputArea"></div>
@@ -49,14 +49,14 @@
                 reader.onload = function(e) {
                     const tempImg = new Image();
                     tempImg.onload = function() {
-                        // 1. ഫോട്ടോ ലോഡ് ആകുമ്പോൾ തന്നെ ആദ്യം Smart Auto Crop ചെയ്യുന്നു
+                        // 1. ഫോട്ടോ ലോഡ് ആകുമ്പോൾ തന്നെ പുതിയ Edge Detection Auto Crop നടക്കുന്നു
                         const croppedDataUrl = autoCropImage(tempImg);
                         
                         const finalImg = new Image();
                         finalImg.onload = function() {
                             originalCroppedImages[index] = finalImg; 
                             createUI(index);
-                            processImage(index, 160, 50, 1); 
+                            processImage(index, 160, 50, 0); 
                         };
                         finalImg.src = croppedDataUrl;
                     };
@@ -66,7 +66,7 @@
             });
         });
 
-        // --- പുതിയ Smart Auto Crop ഫംഗ്ഷൻ ---
+        // --- ഏറ്റവും പുതിയ Edge Detection Auto Crop ---
         function autoCropImage(img) {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
@@ -91,21 +91,32 @@
             let inkX = [];
             let inkY = [];
 
-            // ഫോൺ ഫോട്ടോകളിലെ അരികുകളിലെ നിഴലുകൾ ഒഴിവാക്കാൻ 5% മാർജിൻ മാറ്റുന്നു
+            // ഫോട്ടോയുടെ അരികുകളിലെ പ്രശ്നങ്ങൾ ഒഴിവാക്കാൻ 5% മാർജിൻ മാറ്റുന്നു
             let marginX = Math.floor(width * 0.05);
             let marginY = Math.floor(height * 0.05);
 
             for (let y = marginY; y < height - marginY; y++) {
                 for (let x = marginX; x < width - marginX; x++) {
-                    let i = (y * width + x) * 4;
-                    let r = data[i], g = data[i+1], b = data[i+2];
+                    let idx = (y * width + x) * 4;
+                    let r = data[idx], g = data[idx+1], b = data[idx+2];
+                    
+                    let grayPixel = (0.299 * r) + (0.587 * g) + (0.114 * b);
 
-                    let brightness = (0.299 * r) + (0.587 * g) + (0.114 * b);
-                    // നിറമുള്ള മഷികൾ വേഗത്തിൽ കണ്ടെത്താൻ
+                    // തൊട്ടടുത്ത പിക്സലുകളുമായി താരതമ്യം ചെയ്യുന്നു (Local Contrast / Edge Detection)
+                    let rightIdx = (y * width + (x + 2)) * 4;
+                    let bottomIdx = ((y + 2) * width + x) * 4;
+
+                    let grayRight = x + 2 < width ? (0.299 * data[rightIdx] + 0.587 * data[rightIdx+1] + 0.114 * data[rightIdx+2]) : grayPixel;
+                    let grayBottom = y + 2 < height ? (0.299 * data[bottomIdx] + 0.587 * data[bottomIdx+1] + 0.114 * data[bottomIdx+2]) : grayPixel;
+
+                    let diffX = Math.abs(grayPixel - grayRight);
+                    let diffY = Math.abs(grayPixel - grayBottom);
+
+                    // കളർ വ്യത്യാസം കണ്ടെത്തുന്നു (മഷി നീലയോ പച്ചയോ ആണെങ്കിൽ)
                     let colorDiff = Math.max(r, g, b) - Math.min(r, g, b);
 
-                    // ഇരുണ്ട പിക്സലുകളോ അല്ലെങ്കിൽ നിറമുള്ള പിക്സലുകളോ ആണെങ്കിൽ 'മഷി' ആയി കണക്കാക്കാം
-                    if (brightness < 170 || colorDiff > 30) { 
+                    // നിഴലുകൾ ഒഴിവാക്കി, ഷാർപ്പ് ആയ വരകളോ (diff > 15) തെളിഞ്ഞ നിറമോ (color > 40) മാത്രം എടുക്കുന്നു
+                    if ((diffX > 15 || diffY > 15 || colorDiff > 40) && grayPixel < 220) {
                         inkX.push(x);
                         inkY.push(y);
                     }
@@ -115,13 +126,13 @@
             let minX = 0, minY = 0, maxX = width, maxY = height;
             let padding = 20;
 
-            if (inkX.length > 50) { // ആവശ്യത്തിന് മഷി കണ്ടെത്തിയാൽ മാത്രം
+            if (inkX.length > 50) { 
                 inkX.sort((a, b) => a - b);
                 inkY.sort((a, b) => a - b);
 
-                // വേണ്ടാത്ത പൊടികളും ചെറിയ നിഴലുകളും ഒഴിവാക്കാൻ 2% ഔട്ട്‌ലയേഴ്സ് മാറ്റുന്നു (Outlier removal)
-                let pLow = Math.floor(inkX.length * 0.02);
-                let pHigh = Math.floor(inkX.length * 0.98);
+                // വേണ്ടാത്ത പൊടികളും ഫോട്ടോയുടെ മൂലയിലുള്ള കറുപ്പും ഒഴിവാക്കാൻ 5% മാറ്റുന്നു (Outlier removal)
+                let pLow = Math.floor(inkX.length * 0.05);
+                let pHigh = Math.floor(inkX.length * 0.95);
 
                 minX = Math.max(0, inkX[pLow] - padding);
                 minY = Math.max(0, inkY[pLow] - padding);
@@ -165,8 +176,8 @@
                         <input type="range" id="slider-v-${index}" min="0" max="150" value="50" oninput="updateUIAndProcess(${index})">
                     </div>
                     <div class="control-group">
-                        <label>ക്ലാരിറ്റി (Smoothness): <span class="val-display" id="val-s-${index}">1</span></label>
-                        <input type="range" id="slider-s-${index}" min="0" max="10" value="1" step="0.1" oninput="updateUIAndProcess(${index})">
+                        <label>ക്ലാരിറ്റി (Smoothness): <span class="val-display" id="val-s-${index}">0</span></label>
+                        <input type="range" id="slider-s-${index}" min="0" max="10" value="0" step="0.1" oninput="updateUIAndProcess(${index})">
                     </div>
                 </div>
                 
@@ -189,7 +200,7 @@
             processImage(index, threshold, vibrancy, smoothness);
         };
 
-        // --- പ്രോസസ്സിംഗ് (ക്രോപ്പ് ചെയ്ത ഇമേജിൽ) ---
+        // --- സ്ലൈഡർ വഴിയുള്ള കളർ പ്രോസസ്സിംഗ് ---
         function processImage(index, threshold, vibrancy, smoothness) {
             const img = originalCroppedImages[index]; 
             const canvas = document.createElement('canvas');
