@@ -1,42 +1,131 @@
 <!DOCTYPE html>
 <html lang="ml">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super Color Ink & Seal Optimizer</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; text-align: center; background: #f0f2f5; color: #333; }
-        .container { max-width: 650px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        h2 { color: #007bff; }
-        .image-box { margin: 20px 0; padding: 20px; border: 1px solid #e1e4e8; border-radius: 10px; background: #fafafa; }
-        .preview-img { max-width: 100%; max-height: 180px; margin-top: 15px; border: 1px dashed #b1b1b1; background: #fff; border-radius: 5px; }
-        button { padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 15px; font-size: 16px; transition: background 0.3s; }
-        button:hover { background: #218838; }
-        input[type="file"] { margin-bottom: 20px; width: 100%; padding: 10px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 5px; }
-        .controls-container { margin-top: 20px; background: #eee; padding: 15px; border-radius: 8px; text-align: left; }
-        .control-group { margin-bottom: 12px; }
-        .control-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
-        input[type="range"] { width: 100%; cursor: pointer; }
-        .val-display { font-weight: normal; color: #666; float: right; }
-        .status-text { font-weight: bold; font-size: 15px; margin-top: 15px; }
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            text-align: center;
+            background: #f0f2f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 650px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: #007bff;
+        }
+
+        .image-box {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #e1e4e8;
+            border-radius: 10px;
+            background: #fafafa;
+        }
+
+        .preview-img {
+            max-width: 100%;
+            max-height: 180px;
+            margin-top: 15px;
+            border: 1px dashed #b1b1b1;
+            background: #fff;
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 15px;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #218838;
+        }
+
+        input[type="file"] {
+            margin-bottom: 20px;
+            width: 100%;
+            padding: 10px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .controls-container {
+            margin-top: 20px;
+            background: #eee;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: left;
+        }
+
+        .control-group {
+            margin-bottom: 12px;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .val-display {
+            font-weight: normal;
+            color: #666;
+            float: right;
+        }
+
+        .status-text {
+            font-weight: bold;
+            font-size: 15px;
+            margin-top: 15px;
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h2>സിഗ്നേച്ചർ / സീൽ സെറ്റ് ചെയ്യാം</h2>
         <p>ബാക്ക്ഗ്രൗണ്ട് 'വെള്ള' ആക്കാനും നിറങ്ങൾ വർദ്ധിപ്പിക്കാനും.</p>
-        
+
         <input type="file" id="imageInput" accept="image/*" multiple max="3">
         <div id="outputArea"></div>
     </div>
-
+    <div id="counterContainer"
+        style=" display: none; text-align: center; font-size: 14px; color: #4b5563; margin-top: 15px; padding: 10px; background-color: #e0e7ff; border-radius: 8px; ">
+        Count: <span id="countDisplay" style="font-weight: 900; color: #4f46e5; font-size: 16px">0</span></div>
     <script>
-        let originalImages = []; 
+        let originalImages = [];
 
-        document.getElementById('imageInput').addEventListener('change', function(event) {
+        document.getElementById('imageInput').addEventListener('change', function (event) {
             const files = event.target.files;
             const outputArea = document.getElementById('outputArea');
-            outputArea.innerHTML = ''; 
+            outputArea.innerHTML = '';
             originalImages = [];
 
             if (files.length > 3) {
@@ -46,13 +135,13 @@
 
             Array.from(files).forEach((file, index) => {
                 const reader = new FileReader();
-                reader.onload = function(e) {
+                reader.onload = function (e) {
                     const img = new Image();
-                    img.onload = function() {
-                        originalImages[index] = img; 
+                    img.onload = function () {
+                        originalImages[index] = img;
                         createUI(index);
                         // Default values for Color Mashi: Threshold 160, Vibrancy 50, Smooth 1
-                        processImage(index, 160, 50, 1); 
+                        processImage(index, 160, 50, 1);
                     };
                     img.src = e.target.result;
                 };
@@ -64,7 +153,7 @@
             const outputArea = document.getElementById('outputArea');
             const box = document.createElement('div');
             box.className = 'image-box';
-            
+
             box.innerHTML = `
                 <h4>Image ${index + 1}</h4>
                 <img id="preview-${index}" class="preview-img" src="" alt="Processing..."><br>
@@ -93,7 +182,7 @@
         }
 
         // ഏതെങ്കിലും സ്ലൈഡർ മാറ്റുമ്പോൾ ഈ ഫംഗ്ഷൻ വിളിക്കപ്പെടും
-        window.updateUIAndProcess = function(index) {
+        window.updateUIAndProcess = function (index) {
             const threshold = parseInt(document.getElementById(`slider-t-${index}`).value);
             const vibrancy = parseInt(document.getElementById(`slider-v-${index}`).value);
             const smoothness = parseFloat(document.getElementById(`slider-s-${index}`).value);
@@ -123,7 +212,7 @@
             canvas.height = height;
 
             // 1. ഫിൽട്ടറുകൾ പ്രയോഗിക്കുന്നു (സ്മൂത്ത്നെസ്സ്)
-            if(smoothness > 0) {
+            if (smoothness > 0) {
                 ctx.filter = `blur(${smoothness}px)`; // വളരെ ചെറിയ ബ്ലർ നൽകി സ്മൂത്ത് ആക്കുന്നു
             } else {
                 ctx.filter = 'none';
@@ -148,23 +237,23 @@
             const vibFactor = (vibrancy / 100) + 1; // Vibrancy ലേക്ക് കൺവെർട്ട് ചെയ്യുന്നു
 
             for (let i = 0; i < data.length; i += 4) {
-                let r = data[i], g = data[i+1], b = data[i+2];
+                let r = data[i], g = data[i + 1], b = data[i + 2];
                 let brightness = (0.299 * r) + (0.587 * g) + (0.114 * b);
 
                 if (brightness > threshold) {
                     // ബാക്ക്ഗ്രൗണ്ട് പൂർണ്ണമായും വെള്ളയാക്കുന്നു (സുതാര്യമാക്കുന്നു)
-                    data[i+3] = 0; 
+                    data[i + 3] = 0;
                 } else {
                     // മഷി നിറങ്ങളുടെ തെളിച്ചം (Saturation/Vibrancy) വർദ്ധിപ്പിക്കുന്നു
                     if (vibrancy > 0) {
                         let avg = (r + g + b) / 3;
-                        data[i]   = Math.min(255, Math.max(0, avg + vibFactor * (r - avg))); // R
-                        data[i+1] = Math.min(255, Math.max(0, avg + vibFactor * (g - avg))); // G
-                        data[i+2] = Math.min(255, Math.max(0, avg + vibFactor * (b - avg))); // B
+                        data[i] = Math.min(255, Math.max(0, avg + vibFactor * (r - avg))); // R
+                        data[i + 1] = Math.min(255, Math.max(0, avg + vibFactor * (g - avg))); // G
+                        data[i + 2] = Math.min(255, Math.max(0, avg + vibFactor * (b - avg))); // B
                     }
                 }
             }
-            
+
             // പ്രോസസ്സ് ചെയ്ത ഇമേജ് വൈറ്റ് ബാക്ക്ഗ്രൗണ്ടിലേക്ക് മാറ്റുന്നു
             ctx.putImageData(imgData, 0, 0);
             outCtx.drawImage(canvas, 0, 0); // സുതാര്യമായ ഇമേജ് വൈറ്റ് ക്യാൻവാസിലേക്ക് വരയ്ക്കുന്നു
@@ -182,7 +271,7 @@
 
             // 5. UI അപ്ഡേറ്റ്
             document.getElementById(`preview-${index}`).src = dataUrl;
-            
+
             const sizeElement = document.getElementById(`size-${index}`);
             sizeElement.innerText = `Size: ${sizeKB.toFixed(2)} KB`;
             if (sizeKB <= 15) {
@@ -193,16 +282,25 @@
             }
 
             document.getElementById(`download-${index}`).href = dataUrl;
+            incrementCounter();
         }
 
         function getBase64SizeKB(base64String) {
             let padding = 0;
             if (base64String.endsWith("==")) padding = 2;
             else if (base64String.endsWith("=")) padding = 1;
-            
+
             const base64Length = base64String.length - (base64String.indexOf(',') + 1);
             return ((base64Length * 0.75) - padding) / 1024;
         }
+        const counterNamespace = "crop-rubundroid";
+        const counterKey = "total-calculations";
+
+        function getInitialCount() { fetch(`https://api.counterapi.dev/v1/${counterNamespace}/${counterKey}`).then((response) => response.json()).then((data) => { if (data.count && data.count > 0) { document.getElementById("countDisplay").innerText = data.count; document.getElementById("counterContainer").style.display = "block" } }).catch((error) => { console.log("Counter blocked by browser or ad-blocker.") }) }
+
+        function incrementCounter() { fetch(`https://api.counterapi.dev/v1/${counterNamespace}/${counterKey}/up`,).then((response) => response.json()).then((data) => { if (data.count) { document.getElementById("countDisplay").innerText = data.count; document.getElementById("counterContainer").style.display = "block" } }).catch((error) => console.log("Counter increment failed.")) }
+        window.onload = function () { getInitialCount; };
     </script>
 </body>
+
 </html>
