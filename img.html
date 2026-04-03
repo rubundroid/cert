@@ -175,10 +175,11 @@
                 </div>
                 
                 <a id="download-${index}" href="#" download="color_optimized_${index + 1}.jpg">
-                    <button>Download JPG</button>
+                    <button onclick="incrementCounter()">Download JPG</button>
                 </a>
             `;
             outputArea.appendChild(box);
+
         }
 
         // ഏതെങ്കിലും സ്ലൈഡർ മാറ്റുമ്പോൾ ഈ ഫംഗ്ഷൻ വിളിക്കപ്പെടും
@@ -276,13 +277,14 @@
             sizeElement.innerText = `Size: ${sizeKB.toFixed(2)} KB`;
             if (sizeKB <= 15) {
                 sizeElement.style.color = 'green';
+
             } else {
                 sizeElement.style.color = 'red';
                 sizeElement.innerText += " (Compressing failed, try smaller image)";
             }
 
             document.getElementById(`download-${index}`).href = dataUrl;
-            incrementCounter();
+
         }
 
         function getBase64SizeKB(base64String) {
