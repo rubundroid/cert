@@ -3,7 +3,7 @@
 
 
  //call // incrementCounter();
- //window.onload = function () // getInitialCount;
+ //start call// window.onload = function () {getInitialCount;};
 
 const counterNamespace = "crop-rubundroid";
 const counterKey = "total-calculations";
@@ -11,3 +11,5 @@ const counterKey = "total-calculations";
 function getInitialCount(){fetch(`https://api.counterapi.dev/v1/${counterNamespace}/${counterKey}`).then((response)=>response.json()).then((data)=>{if(data.count&&data.count>0){document.getElementById("countDisplay").innerText=data.count;document.getElementById("counterContainer").style.display="block"}}).catch((error)=>{console.log("Counter blocked by browser or ad-blocker.")})}
 
 function incrementCounter(){fetch(`https://api.counterapi.dev/v1/${counterNamespace}/${counterKey}/up`,).then((response)=>response.json()).then((data)=>{if(data.count){document.getElementById("countDisplay").innerText=data.count;document.getElementById("counterContainer").style.display="block"}}).catch((error)=>console.log("Counter increment failed."))}
+
+window.onload = function () {getInitialCount;};
