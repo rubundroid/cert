@@ -1,0 +1,13 @@
+<div id="counterContainer" style=" display: none; text-align: center; font-size: 14px; color: #4b5563; margin-top: 15px; padding: 10px; background-color: #e0e7ff; border-radius: 8px; " > Count: <span id="countDisplay" style="font-weight: 900; color: #4f46e5; font-size: 16px" >0</span ></div>
+
+
+
+ //call // incrementCounter();
+ //window.onload = function () // getInitialCount;
+
+const counterNamespace = "crop-rubundroid";
+const counterKey = "total-calculations";
+
+function getInitialCount(){fetch(`https://api.counterapi.dev/v1/${counterNamespace}/${counterKey}`).then((response)=>response.json()).then((data)=>{if(data.count&&data.count>0){document.getElementById("countDisplay").innerText=data.count;document.getElementById("counterContainer").style.display="block"}}).catch((error)=>{console.log("Counter blocked by browser or ad-blocker.")})}
+
+function incrementCounter(){fetch(`https://api.counterapi.dev/v1/${counterNamespace}/${counterKey}/up`,).then((response)=>response.json()).then((data)=>{if(data.count){document.getElementById("countDisplay").innerText=data.count;document.getElementById("counterContainer").style.display="block"}}).catch((error)=>console.log("Counter increment failed."))}
