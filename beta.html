@@ -1094,25 +1094,28 @@
       const rightCenter = 165; // വലതുവശത്തെ ബ്ലോക്കിൻ്റെ മധ്യഭാഗം (X axis)
 
       if (imgData.desigSeal) {
-        // 55mm വീതിയുള്ള സീൽ നടുക്ക് വരാൻ -27.5 കുറയ്ക്കുന്നു
         // 1. ഡെസിഗ്നേഷൻ സീലിന്റെ യഥാർത്ഥ റേഷ്യോ കണ്ടുപിടിക്കുന്നു
         let desigProps = doc.getImageProperties(imgData.desigSeal);
         let desigRatio = desigProps.height / desigProps.width;
 
-        // 2. PDF-ൽ വീതി 55 ആയി തന്നെ ഉറപ്പിച്ചു നിർത്തുന്നു (ഇത് താങ്കൾക്ക് വേണമെങ്കിൽ മാറ്റാം)
         let pdfDesigWidth = 55;
-
-        // 3. ആ വീതിക്ക് അനുസരിച്ചുള്ള യഥാർത്ഥ നീളം തനിയെ കണ്ടുപിടിക്കുന്നു
         let pdfDesigHeight = pdfDesigWidth * desigRatio;
 
-        // 4. ഇമേജ് PDF-ലേക്ക് ചേർക്കുന്നു
+        // 🌟 MAX HEIGHT LIMITER: ഡെസിഗ്നേഷൻ സീലിന്റെ ഉയരം 20 ൽ കൂടിയാൽ അത് ചെറുതാക്കുന്നു 
+        let maxDesigHeight = 20;
+        if (pdfDesigHeight > maxDesigHeight) {
+          pdfDesigHeight = maxDesigHeight;
+          pdfDesigWidth = pdfDesigHeight / desigRatio; // റേഷ്യോ മാറാതെ വീതിയും കുറയ്ക്കുന്നു
+        }
+
+        // 2. ഇമേജ് PDF-ലേക്ക് ചേർക്കുന്നു
         doc.addImage(
           imgData.desigSeal,
           "PNG",
-          rightCenter - (pdfDesigWidth / 2), // ഇത് സീൽ കൃത്യമായി നടുക്ക് വരാൻ സഹായിക്കും
+          rightCenter - (pdfDesigWidth / 2),
           footerY + 5,
           pdfDesigWidth,
-          pdfDesigHeight, // പഴയ 18 ന് പകരം പുതിയ അളവ് നൽകി
+          pdfDesigHeight,
           undefined,
           "FAST"
         );
@@ -1123,21 +1126,26 @@
         let signProps = doc.getImageProperties(imgData.sign);
         let signRatio = signProps.height / signProps.width;
 
-        // 2. PDF-ൽ വീതി 35 ആയി തന്നെ ഉറപ്പിച്ചു നിർത്തുന്നു
         let pdfSignWidth = 35;
-
-        // 3. ആ വീതിക്ക് അനുസരിച്ചുള്ള യഥാർത്ഥ നീളം തനിയെ കണ്ടുപിടിക്കുന്നു
         let pdfSignHeight = pdfSignWidth * signRatio;
 
-        // 4. ഒപ്പ് പേരിന്റെ കൃത്യം മുകളിൽ വരാൻ Y-Position തനിയെ കണ്ടെത്തുന്നു (ഇതാണ് പുതിയ മാറ്റം 🌟)
-        let signYPosition = footerY - pdfSignHeight - 2;
+        // 🌟 MAX HEIGHT LIMITER: ഒപ്പിന്റെ ഉയരം 16 ൽ കൂടിയാൽ അത് ചെറുതാക്കുന്നു (ടെക്സ്റ്റിൽ മുട്ടാതിരിക്കാൻ)
+        let maxSignHeight = 16;
+        if (pdfSignHeight > maxSignHeight) {
+          pdfSignHeight = maxSignHeight;
+          pdfSignWidth = pdfSignHeight / signRatio; // റേഷ്യോ മാറാതെ വീതിയും കുറയ്ക്കുന്നു
+        }
 
-        // 5. ഇമേജ് PDF-ലേക്ക് ചേർക്കുന്നു
+        // 2. ഒപ്പ് കൃത്യം എവിടെ വരണം എന്ന് തീരുമാനിക്കുന്നു
+        // -2 ന് പകരം +2 കൊടുത്താൽ അത് മുകളിലെ ടെക്സ്റ്റിൽ മുട്ടില്ല, പകരം സീലിന്റെ/പേരിന്റെ അടുത്തേക്ക് നിൽക്കും
+        let signYPosition = footerY - pdfSignHeight + 2;
+
+        // 3. ഇമേജ് PDF-ലേക്ക് ചേർക്കുന്നു
         doc.addImage(
           imgData.sign,
           "PNG",
           rightCenter - (pdfSignWidth / 2),
-          signYPosition, // പഴയ 'footerY - 12' ന് പകരം പുതിയ പൊസിഷൻ നൽകി
+          signYPosition,
           pdfSignWidth,
           pdfSignHeight,
           undefined,
