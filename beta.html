@@ -1090,32 +1090,6 @@
       doc.setFontSize(11);
       doc.text(`Dated: ${dateStr}`, 20, footerY + 35);
 
-
-
-      if (imgData.sign) {
-        // 35mm വീതിയുള്ള ഒപ്പ് നടുക്ക് വരാൻ -17.5 കുറയ്ക്കുന്നു
-        // 1. ഒപ്പിന്റെ യഥാർത്ഥ റേഷ്യോ കണ്ടുപിടിക്കുന്നു
-        let signProps = doc.getImageProperties(imgData.sign);
-        let signRatio = signProps.height / signProps.width;
-
-        // 2. PDF-ൽ വീതി 35 ആയി തന്നെ ഉറപ്പിച്ചു നിർത്തുന്നു
-        let pdfSignWidth = 35;
-
-        // 3. ആ വീതിക്ക് അനുസരിച്ചുള്ള യഥാർത്ഥ നീളം തനിയെ കണ്ടുപിടിക്കുന്നു
-        let pdfSignHeight = pdfSignWidth * signRatio;
-
-        // 4. ഇമേജ് PDF-ലേക്ക് ചേർക്കുന്നു
-        doc.addImage(
-          imgData.sign,
-          "PNG",
-          rightCenter - (pdfSignWidth / 2), // ഒപ്പ് കൃത്യമായി നടുക്ക് വരാൻ ഇത് സഹായിക്കും
-          footerY - 12,
-          pdfSignWidth,
-          pdfSignHeight, // പഴയ 15 ന് പകരം പുതിയ അളവ് നൽകി
-          undefined,
-          "FAST"
-        );
-      }
       // --- RIGHT SIDE: Signature Block (Center Aligned within the right margin) ---
       const rightCenter = 165; // വലതുവശത്തെ ബ്ലോക്കിൻ്റെ മധ്യഭാഗം (X axis)
 
@@ -1143,6 +1117,34 @@
           "FAST"
         );
       }
+
+      if (imgData.sign) {
+        // 1. ഒപ്പിന്റെ യഥാർത്ഥ റേഷ്യോ കണ്ടുപിടിക്കുന്നു
+        let signProps = doc.getImageProperties(imgData.sign);
+        let signRatio = signProps.height / signProps.width;
+
+        // 2. PDF-ൽ വീതി 35 ആയി തന്നെ ഉറപ്പിച്ചു നിർത്തുന്നു
+        let pdfSignWidth = 35;
+
+        // 3. ആ വീതിക്ക് അനുസരിച്ചുള്ള യഥാർത്ഥ നീളം തനിയെ കണ്ടുപിടിക്കുന്നു
+        let pdfSignHeight = pdfSignWidth * signRatio;
+
+        // 4. ഒപ്പ് പേരിന്റെ കൃത്യം മുകളിൽ വരാൻ Y-Position തനിയെ കണ്ടെത്തുന്നു (ഇതാണ് പുതിയ മാറ്റം 🌟)
+        let signYPosition = footerY - pdfSignHeight - 2;
+
+        // 5. ഇമേജ് PDF-ലേക്ക് ചേർക്കുന്നു
+        doc.addImage(
+          imgData.sign,
+          "PNG",
+          rightCenter - (pdfSignWidth / 2),
+          signYPosition, // പഴയ 'footerY - 12' ന് പകരം പുതിയ പൊസിഷൻ നൽകി
+          pdfSignWidth,
+          pdfSignHeight,
+          undefined,
+          "FAST"
+        );
+      }
+
       let textY = footerY + 30;
 
       // ടെക്സ്റ്റുകൾ എല്ലാം നടുക്കായി (align: "center") പ്രിൻ്റ് ചെയ്യുന്നു
