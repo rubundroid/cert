@@ -782,7 +782,7 @@
             <div class="seal-spacer" style="height: 160px"></div>
 
             <p class="designation" id="outOfficer">DDO Name</p>
-            <p class="pen-number">PEN <span id="outPen">of DDO</span></p>
+            <p class="pen-number" id="outPen">PEN of DDO</p>
             <p class="designation" id="outDesig">DDO designation</p>
             <p class="designation" id="outOfficeSign">Office Name</p>
           </div>
@@ -991,6 +991,18 @@
     let savedCertificates =
       JSON.parse(localStorage.getItem("myCertificates")) || defaultCerts;
 
+    // HTML-ൽ നേരിട്ട് ഇടുന്നതിന് മുൻപ് text safe ആക്കാൻ — community/local cert text-ൽ
+    // HTML/script ഉണ്ടെങ്കിലും അത് plain text ആയി മാത്രമേ കാണിക്കൂ, execute ആകില്ല.
+    // (attribute value context-ലും text context-ലും സുരക്ഷിതം ആകാൻ quotes കൂടെ escape ചെയ്യുന്നു)
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
     // UI-ൽ സർട്ടിഫിക്കറ്റ് ലിസ്റ്റ് കാണിക്കാനും ഫിൽറ്റർ ചെയ്യാനുമുള്ള ഫംഗ്ഷൻ
     // UI-ൽ സർട്ടിഫിക്കറ്റ് ലിസ്റ്റ് കാണിക്കാനും ഫിൽറ്റർ ചെയ്യാനുമുള്ള ഫംഗ്ഷൻ
     function renderCertificates() {
@@ -1044,10 +1056,13 @@
         // പുതിയ മാറ്റം: ഈ സർട്ടിഫിക്കറ്റ് നമ്മൾ നേരത്തെ സെലക്ട് ചെയ്തവയിൽ ഉണ്ടോ എന്ന് നോക്കുന്നു
         const isChecked = selectedCerts.includes(cert.text) ? "checked" : "";
 
+        // Security: cert.text (community-submitted ആകാം) escape ചെയ്ത ശേഷം മാത്രം HTML-ൽ ഇടുന്നു
+        const safeCertText = escapeHtml(cert.text);
+
         // HTML നിർമ്മിക്കുന്നു (onchange ൽ toggleSelection കൊടുത്തത് ശ്രദ്ധിക്കുക)
         label.innerHTML = `
-                <input type="checkbox" value="${cert.text}" data-source="${cert.source}" ${isChecked} onchange="toggleSelection(this)">
-                <span class="cert-text" onclick="this.previousElementSibling.click()">${cert.text} ${badge}</span>
+                <input type="checkbox" value="${safeCertText}" data-source="${cert.source}" ${isChecked} onchange="toggleSelection(this)">
+                <span class="cert-text" onclick="this.previousElementSibling.click()">${safeCertText} ${badge}</span>
                 ${actionButtons}
             `;
         container.appendChild(label);
@@ -1120,7 +1135,7 @@
       document.getElementById("outDesig").innerText =
         document.getElementById("desigInput").value || "Designation";
       document.getElementById("outPen").innerText =
-        document.getElementById("penInput").value || "PEN Number";
+        "PEN " + (document.getElementById("penInput").value || "Number");
       document.getElementById("outDdoCode").innerText =
         "DDO Code: " + (document.getElementById("ddoCodeInput").value || "XXXXXX");
 
@@ -1202,7 +1217,7 @@
       // മെമ്മറിയിൽ സേവ് ആയവ വെച്ച് ലിസ്റ്റ് ഉണ്ടാക്കുന്നു
       let html = "<ol style='padding-left: 20px; margin: 0;'>";
       selectedCerts.forEach((text) => {
-        html += `<li style="margin-bottom: 8px; text-align: justify;">${text}</li>`;
+        html += `<li style="margin-bottom: 8px; text-align: justify;">${escapeHtml(text)}</li>`;
       });
       html += "</ol>";
 
@@ -1262,6 +1277,7 @@
 
       // 3. സർട്ടിഫിക്കറ്റ് കണ്ടൻ്റ് (Justified & Hanging Indent)
       doc.setFont("times", "normal");
+      doc.setFontSize(11); // CSS-ലെ 14px-ന് അടുത്ത് വരാൻ explicit ആയി സെറ്റ് ചെയ്യുന്നു (മുൻപ് ഇത് ടൈറ്റിലിന്റെ 12 silently inherit ചെയ്യുകയായിരുന്നു)
       const listItems = document.querySelectorAll("#outText li");
       if (listItems.length === 0) {
         alert("Please select certificates.");
@@ -1318,14 +1334,19 @@
         // 3. ആ വീതിക്ക് അനുസരിച്ചുള്ള യഥാർത്ഥ നീളം തനിയെ കണ്ടുപിടിക്കുന്നു
         let pdfSealHeight = pdfSealWidth * sealRatio;
 
-        // 4. ഇമേജ് PDF-ലേക്ക് ചേർക്കുന്നു
+        // 4. Preview-ൽ ഇത് box-ന്റെ അടിഭാഗത്ത് നിന്ന് ഉറപ്പിച്ചതാണ് (bottom-anchored) —
+        //    height എത്ര ആയാലും സീലിന്റെ അടിഭാഗം ഇവിടെ വരും. CSS values-ൽ നിന്ന് കണക്കാക്കിയത്;
+        //    ആവശ്യമെങ്കിൽ താഴെ ഈ ഒറ്റ നമ്പർ (30) മാറ്റിയാൽ മതി.
+        const sealBottomY = footerY + 30;
+
+        // 5. ഇമേജ് PDF-ലേക്ക് ചേർക്കുന്നു
         doc.addImage(
           imgData.seal,
           "JPEG",
           20,
-          footerY,
+          sealBottomY - pdfSealHeight,
           pdfSealWidth,
-          pdfSealHeight, // ഇവിടെ രണ്ടാമത്തെ 30 ന് പകരം പുതിയ അളവ് നൽകി
+          pdfSealHeight,
           undefined,
           "FAST"
         );
@@ -1353,12 +1374,16 @@
           pdfDesigWidth = pdfDesigHeight / desigRatio; // റേഷ്യോ മാറാതെ വീതിയും കുറയ്ക്കുന്നു
         }
 
+        // Preview-ൽ ഇതും bottom-anchored ആണ് (CSS-ലെ bottom:110px-ൽ നിന്ന് കണക്കാക്കിയത്;
+        // ആവശ്യമെങ്കിൽ ഈ ഒറ്റ നമ്പർ (35) മാറ്റിയാൽ മതി)
+        const desigSealBottomY = footerY + 35;
+
         // 2. ഇമേജ് PDF-ലേക്ക് ചേർക്കുന്നു
         doc.addImage(
           imgData.desigSeal,
           "JPEG",
           rightCenter - (pdfDesigWidth / 2),
-          footerY + 5,
+          desigSealBottomY - pdfDesigHeight,
           pdfDesigWidth,
           pdfDesigHeight,
           undefined,
@@ -1381,9 +1406,10 @@
           pdfSignWidth = pdfSignHeight / signRatio; // റേഷ്യോ മാറാതെ വീതിയും കുറയ്ക്കുന്നു
         }
 
-        // 2. ഒപ്പ് കൃത്യം എവിടെ വരണം എന്ന് തീരുമാനിക്കുന്നു
-        // -2 ന് പകരം +2 കൊടുത്താൽ അത് മുകളിലെ ടെക്സ്റ്റിൽ മുട്ടില്ല, പകരം സീലിന്റെ/പേരിന്റെ അടുത്തേക്ക് നിൽക്കും
-        let signYPosition = footerY - pdfSignHeight + 2;
+        // 2. ഒപ്പ് കൃത്യം എവിടെ വരണം എന്ന് തീരുമാനിക്കുന്നു (Preview-ലെ bottom:140px-ൽ നിന്ന് കണക്കാക്കിയത്;
+        // ആവശ്യമെങ്കിൽ ഈ ഒറ്റ നമ്പർ (27) മാറ്റിയാൽ മതി)
+        let signBottomY = footerY + 27;
+        let signYPosition = signBottomY - pdfSignHeight;
 
         // 3. ഇമേജ് PDF-ലേക്ക് ചേർക്കുന്നു
         doc.addImage(
@@ -1408,7 +1434,7 @@
           textY += 5; // അടുത്ത വരിയിലേക്കുള്ള അകലം
         });
       }
-      doc.text(`PEN ${pen}`, rightCenter, textY, { align: "center" });
+      doc.text(`PEN ${pen || "Number"}`, rightCenter, textY, { align: "center" });
       textY += 5;
       if (desig) {
         const splitDesig = doc.splitTextToSize(desig, 50);
