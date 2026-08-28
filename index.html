@@ -205,6 +205,13 @@
       text-transform: uppercase;
     }
 
+    .cert-ddo {
+      font-family: "Times New Roman", Times, serif;
+      text-align: center;
+      font-size: 0.85em;
+      margin-bottom: 10px;
+    }
+
     .cert-title {
       font-family: "Times New Roman", Times, serif;
       text-align: center;
@@ -218,7 +225,6 @@
       font-family: "Times New Roman", Times, serif;
       line-height: 1.8;
       font-size: 14px;
-      min-height: 150mm;
       outline: none;
       background: #fafafa;
       padding: 10px;
@@ -554,6 +560,13 @@
           " />
     </div>
     <div class="input-group">
+      <label>DDO Code</label>
+      <input type="text" id="ddoCodeInput" placeholder="DDO Code" oninput="
+            updatePreview();
+            saveProfile();
+          " />
+    </div>
+    <div class="input-group">
       <label>Officer Name</label>
       <input type="text" id="officerInput" placeholder="DDO Name" oninput="
             updatePreview();
@@ -712,6 +725,7 @@
     <div class="right-panel">
       <div class="a4-page" id="certificate-content">
         <div class="cert-header" id="outOffice">Office Name</div>
+        <div class="cert-ddo" id="outDdoCode">DDO Code: XXXXXX</div>
         <div class="cert-title">CERTIFICATES</div>
 
         <div class="cert-body" id="outText" contenteditable="true">
@@ -742,32 +756,24 @@
           </div>
 
           <div class="footer-right signature-area" style="width: 50%; text-align: center; position: relative">
-            <img id="previewDesigSeal" src="" style="
-                  display: none;
-                  position: absolute;
-                  left: 50%;
-                  transform: translateX(-50%);
-                  bottom: 110px;
-                  width: 170px;
-                  z-index: 1;
-                  mix-blend-mode: multiply;
-                " />
-
             <img id="previewSign" src="" style="
                   display: none;
-                  position: absolute;
-                  left: 50%;
-                  transform: translateX(-50%);
-                  bottom: 140px;
-                  width: 130px;
-                  z-index: 2;
+                  margin: 0 auto 6px;
+                  max-width: 130px;
+                  max-height: 80px;
                   mix-blend-mode: multiply;
                 " />
 
-            <div class="seal-spacer" style="height: 160px"></div>
+            <img id="previewDesigSeal" src="" style="
+                  display: none;
+                  margin: 0 auto 6px;
+                  max-width: 170px;
+                  max-height: 60px;
+                  mix-blend-mode: multiply;
+                " />
 
             <p class="designation" id="outOfficer">DDO Name</p>
-            <p class="pen-number">PEN <span id="outPen">of DDO</span></p>
+            <p class="pen-number" id="outPen">PEN of DDO</p>
             <p class="designation" id="outDesig">DDO designation</p>
             <p class="designation" id="outOfficeSign">Office Name</p>
           </div>
@@ -940,7 +946,7 @@
 
     // അപ്‌ലോഡ് ചെയ്ത ഇമേജുകൾ ക്ലിയർ ചെയ്യാൻ (ഇതിൽ മാറ്റമില്ല)
     function clearImages() {
-      imgData = { sign: null, seal: null, desigSeal: null };
+      imgData = {sign: null, seal: null, desigSeal: null};
       localStorage.removeItem("savedCertImages");
       document.getElementById("signInput").value = "";
       document.getElementById("sealInput").value = "";
@@ -975,6 +981,18 @@
     // ലോക്കൽ സ്റ്റോറേജിൽ നിന്നും സർട്ടിഫിക്കറ്റുകൾ എടുക്കുന്നു
     let savedCertificates =
       JSON.parse(localStorage.getItem("myCertificates")) || defaultCerts;
+
+    // HTML-ൽ നേരിട്ട് ഇടുന്നതിന് മുൻപ് text safe ആക്കാൻ — community/local cert text-ൽ
+    // HTML/script ഉണ്ടെങ്കിലും അത് plain text ആയി മാത്രമേ കാണിക്കൂ, execute ആകില്ല.
+    // (attribute value context-ലും text context-ലും സുരക്ഷിതം ആകാൻ quotes കൂടെ escape ചെയ്യുന്നു)
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
 
     // UI-ൽ സർട്ടിഫിക്കറ്റ് ലിസ്റ്റ് കാണിക്കാനും ഫിൽറ്റർ ചെയ്യാനുമുള്ള ഫംഗ്ഷൻ
     // UI-ൽ സർട്ടിഫിക്കറ്റ് ലിസ്റ്റ് കാണിക്കാനും ഫിൽറ്റർ ചെയ്യാനുമുള്ള ഫംഗ്ഷൻ
@@ -1029,10 +1047,13 @@
         // പുതിയ മാറ്റം: ഈ സർട്ടിഫിക്കറ്റ് നമ്മൾ നേരത്തെ സെലക്ട് ചെയ്തവയിൽ ഉണ്ടോ എന്ന് നോക്കുന്നു
         const isChecked = selectedCerts.includes(cert.text) ? "checked" : "";
 
+        // Security: cert.text (community-submitted ആകാം) escape ചെയ്ത ശേഷം മാത്രം HTML-ൽ ഇടുന്നു
+        const safeCertText = escapeHtml(cert.text);
+
         // HTML നിർമ്മിക്കുന്നു (onchange ൽ toggleSelection കൊടുത്തത് ശ്രദ്ധിക്കുക)
         label.innerHTML = `
-                <input type="checkbox" value="${cert.text}" data-source="${cert.source}" ${isChecked} onchange="toggleSelection(this)">
-                <span class="cert-text" onclick="this.previousElementSibling.click()">${cert.text} ${badge}</span>
+                <input type="checkbox" value="${safeCertText}" data-source="${cert.source}" ${isChecked} onchange="toggleSelection(this)">
+                <span class="cert-text" onclick="this.previousElementSibling.click()">${safeCertText} ${badge}</span>
                 ${actionButtons}
             `;
         container.appendChild(label);
@@ -1105,7 +1126,9 @@
       document.getElementById("outDesig").innerText =
         document.getElementById("desigInput").value || "Designation";
       document.getElementById("outPen").innerText =
-        document.getElementById("penInput").value || "PEN Number";
+        "PEN " + (document.getElementById("penInput").value || "Number");
+      document.getElementById("outDdoCode").innerText =
+        "DDO Code: " + (document.getElementById("ddoCodeInput").value || "XXXXXX");
 
       // താഴെയുള്ള ഓഫീസിന്റെ പേരും മാറ്റുന്നു (ചില ഡിസൈനുകളിൽ ഇത് ഉപയോഗിക്കുന്നുണ്ട്)
       const outOfficeSign = document.getElementById("outOfficeSign");
@@ -1121,6 +1144,7 @@
         officer: document.getElementById("officerInput").value,
         desig: document.getElementById("desigInput").value,
         pen: document.getElementById("penInput").value,
+        ddoCode: document.getElementById("ddoCodeInput").value,
       };
       localStorage.setItem("myProfile", JSON.stringify(profile));
     }
@@ -1164,6 +1188,7 @@
         document.getElementById("desigInput").value =
           savedProfile.desig || "";
         document.getElementById("penInput").value = savedProfile.pen || "";
+        document.getElementById("ddoCodeInput").value = savedProfile.ddoCode || "";
         // സേവ് ചെയ്ത ഡാറ്റ വെച്ച് പ്രിവ്യൂ അപ്ഡേറ്റ് ചെയ്യുന്നു
         updatePreview();
       }
@@ -1183,7 +1208,7 @@
       // മെമ്മറിയിൽ സേവ് ആയവ വെച്ച് ലിസ്റ്റ് ഉണ്ടാക്കുന്നു
       let html = "<ol style='padding-left: 20px; margin: 0;'>";
       selectedCerts.forEach((text) => {
-        html += `<li style="margin-bottom: 8px; text-align: justify;">${text}</li>`;
+        html += `<li style="margin-bottom: 8px; text-align: justify;">${escapeHtml(text)}</li>`;
       });
       html += "</ol>";
 
@@ -1191,7 +1216,7 @@
     }
 
     function downloadPDF() {
-      const { jsPDF } = window.jspdf;
+      const {jsPDF} = window.jspdf;
       // compress: true നൽകിയിട്ടുണ്ട് (സൈസ് കുറയാൻ)
       const doc = new jsPDF({
         orientation: "portrait",
@@ -1204,6 +1229,7 @@
       const officerName = document.getElementById("officerInput").value;
       const desig = document.getElementById("desigInput").value;
       const pen = document.getElementById("penInput").value;
+      const ddoCode = document.getElementById("ddoCodeInput").value;
       const dateStr = document.getElementById("currentDate").innerText;
 
       let y = 30;
@@ -1217,14 +1243,19 @@
         pageWidth - 40,
       );
       splitOffice.forEach((line) => {
-        doc.text(line, pageWidth / 2, y, { align: "center" });
+        doc.text(line, pageWidth / 2, y, {align: "center"});
         y += 7;
       });
 
-      y += 5;
+      doc.setFont("times", "normal");
+      doc.setFontSize(10);
+      doc.text(`DDO Code: ${ddoCode || "XXXXXX"}`, pageWidth / 2, y, {align: "center"});
+      y += 8;
+
       // 2. ടൈറ്റിൽ (CERTIFICATES)
+      doc.setFont("times", "bold");
       doc.setFontSize(12);
-      doc.text("CERTIFICATES", pageWidth / 2, y, { align: "center" });
+      doc.text("CERTIFICATES", pageWidth / 2, y, {align: "center"});
       const textWidthTitle = doc.getTextWidth("CERTIFICATES");
       doc.line(
         (pageWidth - textWidthTitle) / 2,
@@ -1237,6 +1268,7 @@
 
       // 3. സർട്ടിഫിക്കറ്റ് കണ്ടൻ്റ് (Justified & Hanging Indent)
       doc.setFont("times", "normal");
+      doc.setFontSize(11); // CSS-ലെ 14px-ന് അടുത്ത് വരാൻ explicit ആയി സെറ്റ് ചെയ്യുന്നു (മുൻപ് ഇത് ടൈറ്റിലിന്റെ 12 silently inherit ചെയ്യുകയായിരുന്നു)
       const listItems = document.querySelectorAll("#outText li");
       if (listItems.length === 0) {
         alert("Please select certificates.");
@@ -1262,7 +1294,7 @@
         doc.text(numberStr, 20, y);
 
         // ടെക്സ്റ്റ് Justify ചെയ്ത് പ്രിൻ്റ് ചെയ്യുന്നു (X: 28)
-        doc.text(textStr, 28, y, { align: "justify", maxWidth: textWidth });
+        doc.text(textStr, 28, y, {align: "justify", maxWidth: textWidth});
 
         y += paraHeight + 4; // അടുത്ത വരിയിലേക്കുള്ള ഗ്യാപ്പ്
       });
@@ -1293,14 +1325,19 @@
         // 3. ആ വീതിക്ക് അനുസരിച്ചുള്ള യഥാർത്ഥ നീളം തനിയെ കണ്ടുപിടിക്കുന്നു
         let pdfSealHeight = pdfSealWidth * sealRatio;
 
-        // 4. ഇമേജ് PDF-ലേക്ക് ചേർക്കുന്നു
+        // 4. Preview-ൽ ഇത് box-ന്റെ അടിഭാഗത്ത് നിന്ന് ഉറപ്പിച്ചതാണ് (bottom-anchored) —
+        //    height എത്ര ആയാലും സീലിന്റെ അടിഭാഗം ഇവിടെ വരും. CSS values-ൽ നിന്ന് കണക്കാക്കിയത്;
+        //    ആവശ്യമെങ്കിൽ താഴെ ഈ ഒറ്റ നമ്പർ (30) മാറ്റിയാൽ മതി.
+        const sealBottomY = footerY + 30;
+
+        // 5. ഇമേജ് PDF-ലേക്ക് ചേർക്കുന്നു
         doc.addImage(
           imgData.seal,
           "JPEG",
           20,
-          footerY,
+          sealBottomY - pdfSealHeight,
           pdfSealWidth,
-          pdfSealHeight, // ഇവിടെ രണ്ടാമത്തെ 30 ന് പകരം പുതിയ അളവ് നൽകി
+          pdfSealHeight,
           undefined,
           "FAST"
         );
@@ -1313,33 +1350,10 @@
       // --- RIGHT SIDE: Signature Block (Center Aligned within the right margin) ---
       const rightCenter = 165; // വലതുവശത്തെ ബ്ലോക്കിൻ്റെ മധ്യഭാഗം (X axis)
 
-      if (imgData.desigSeal) {
-        // 1. ഡെസിഗ്നേഷൻ സീലിന്റെ യഥാർത്ഥ റേഷ്യോ കണ്ടുപിടിക്കുന്നു
-        let desigProps = doc.getImageProperties(imgData.desigSeal);
-        let desigRatio = desigProps.height / desigProps.width;
-
-        let pdfDesigWidth = 55;
-        let pdfDesigHeight = pdfDesigWidth * desigRatio;
-
-        // 🌟 MAX HEIGHT LIMITER: ഡെസിഗ്നേഷൻ സീലിന്റെ ഉയരം 20 ൽ കൂടിയാൽ അത് ചെറുതാക്കുന്നു 
-        let maxDesigHeight = 20;
-        if (pdfDesigHeight > maxDesigHeight) {
-          pdfDesigHeight = maxDesigHeight;
-          pdfDesigWidth = pdfDesigHeight / desigRatio; // റേഷ്യോ മാറാതെ വീതിയും കുറയ്ക്കുന്നു
-        }
-
-        // 2. ഇമേജ് PDF-ലേക്ക് ചേർക്കുന്നു
-        doc.addImage(
-          imgData.desigSeal,
-          "JPEG",
-          rightCenter - (pdfDesigWidth / 2),
-          footerY + 5,
-          pdfDesigWidth,
-          pdfDesigHeight,
-          undefined,
-          "FAST"
-        );
-      }
+      // Designation seal-ഉം ഒപ്പും ഇനി ടോപ്-ഡൗൺ ആയി, ഒന്നിന് ശേഷം ഒന്നായി സ്റ്റാക്ക് ചെയ്യുന്നു —
+      // ഓരോന്നിന്റെയും യഥാർത്ഥ ഉയരം അനുസരിച്ച് അടുത്തതിന്റെ സ്ഥാനം കണക്കാക്കുന്നതിനാൽ,
+      // ഇമേജിന്റെ അളവ് എന്ത് ആയാലും രണ്ടും ഒരിക്കലും തമ്മിൽ ഓവർലാപ്പ് ആകില്ല.
+      let rightStackY = footerY + 2;
 
       if (imgData.sign) {
         // 1. ഒപ്പിന്റെ യഥാർത്ഥ റേഷ്യോ കണ്ടുപിടിക്കുന്നു
@@ -1356,39 +1370,67 @@
           pdfSignWidth = pdfSignHeight / signRatio; // റേഷ്യോ മാറാതെ വീതിയും കുറയ്ക്കുന്നു
         }
 
-        // 2. ഒപ്പ് കൃത്യം എവിടെ വരണം എന്ന് തീരുമാനിക്കുന്നു
-        // -2 ന് പകരം +2 കൊടുത്താൽ അത് മുകളിലെ ടെക്സ്റ്റിൽ മുട്ടില്ല, പകരം സീലിന്റെ/പേരിന്റെ അടുത്തേക്ക് നിൽക്കും
-        let signYPosition = footerY - pdfSignHeight + 2;
-
-        // 3. ഇമേജ് PDF-ലേക്ക് ചേർക്കുന്നു
+        // 2. ഇമേജ് PDF-ലേക്ക് ചേർക്കുന്നു
         doc.addImage(
           imgData.sign,
           "JPEG",
           rightCenter - (pdfSignWidth / 2),
-          signYPosition,
+          rightStackY,
           pdfSignWidth,
           pdfSignHeight,
           undefined,
           "FAST"
         );
+        rightStackY += pdfSignHeight + 2; // അടുത്തതിന് (desig seal) മുൻപ് ചെറിയ gap
       }
 
-      let textY = footerY + 30;
+      if (imgData.desigSeal) {
+        // 1. ഡെസിഗ്നേഷൻ സീലിന്റെ യഥാർത്ഥ റേഷ്യോ കണ്ടുപിടിക്കുന്നു
+        let desigProps = doc.getImageProperties(imgData.desigSeal);
+        let desigRatio = desigProps.height / desigProps.width;
+
+        let pdfDesigWidth = 55;
+        let pdfDesigHeight = pdfDesigWidth * desigRatio;
+
+        // 🌟 MAX HEIGHT LIMITER: ഡെസിഗ്നേഷൻ സീലിന്റെ ഉയരം 20 ൽ കൂടിയാൽ അത് ചെറുതാക്കുന്നു 
+        let maxDesigHeight = 20;
+        if (pdfDesigHeight > maxDesigHeight) {
+          pdfDesigHeight = maxDesigHeight;
+          pdfDesigWidth = pdfDesigHeight / desigRatio; // റേഷ്യോ മാറാതെ വീതിയും കുറയ്ക്കുന്നു
+        }
+
+        // 2. ഇമേജ് PDF-ലേക്ക് ചേർക്കുന്നു — ഒപ്പിന് തൊട്ട് താഴെ (stack cursor)
+        doc.addImage(
+          imgData.desigSeal,
+          "JPEG",
+          rightCenter - (pdfDesigWidth / 2),
+          rightStackY,
+          pdfDesigWidth,
+          pdfDesigHeight,
+          undefined,
+          "FAST"
+        );
+        rightStackY += pdfDesigHeight;
+      }
+
+      // സ്റ്റാക്ക് നീണ്ടുപോയാൽ (വലിയ ഇമേജ്) പേര്/PEN ടെക്സ്റ്റ് അതിന് ശേഷം തുടങ്ങും;
+      // ഇല്ലെങ്കിൽ പഴയത് പോലെ footerY+30 തന്നെ (കുറഞ്ഞ പരിധി)
+      let textY = Math.max(rightStackY + 3, footerY + 30);
 
       // ടെക്സ്റ്റുകൾ എല്ലാം നടുക്കായി (align: "center") പ്രിൻ്റ് ചെയ്യുന്നു
       if (officerName) {
         const splitOfficer = doc.splitTextToSize(officerName, 50);
         splitOfficer.forEach((line) => {
-          doc.text(line, rightCenter, textY, { align: "center" });
+          doc.text(line, rightCenter, textY, {align: "center"});
           textY += 5; // അടുത്ത വരിയിലേക്കുള്ള അകലം
         });
       }
-      doc.text(`PEN ${pen}`, rightCenter, textY, { align: "center" });
+      doc.text(`PEN ${pen || "Number"}`, rightCenter, textY, {align: "center"});
       textY += 5;
       if (desig) {
         const splitDesig = doc.splitTextToSize(desig, 50);
         splitDesig.forEach((line) => {
-          doc.text(line, rightCenter, textY, { align: "center" });
+          doc.text(line, rightCenter, textY, {align: "center"});
           textY += 5;
         });
       }
@@ -1397,7 +1439,7 @@
       if (officeName) {
         const splitOffice = doc.splitTextToSize(officeName, 50);
         splitOffice.forEach((line) => {
-          doc.text(line, rightCenter, textY, { align: "center" });
+          doc.text(line, rightCenter, textY, {align: "center"});
           textY += 5;
         });
       }
@@ -1415,6 +1457,7 @@
         document.getElementById("officerInput").value = "";
         document.getElementById("desigInput").value = "";
         document.getElementById("penInput").value = "";
+        document.getElementById("ddoCodeInput").value = "";
 
         // പ്രിവ്യൂ അപ്ഡേറ്റ് ചെയ്യുന്നു
         updatePreview();
